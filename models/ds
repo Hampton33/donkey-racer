@@ -1,0 +1,54 @@
+
+# Wheel 2 Vertices (Front Right)
+v 2.0 0.0 1.0 1.0 1.0 1.0 # 25 Front bottom left
+v 3.0 0.0 1.0 1.0 1.0 1.0 # 26 Front bottom right
+v 2.0 0.0 0.0 1.0 1.0 1.0 # 27 Rear bottom right
+v 2.0 0.0 0.0 1.0 1.0 1.0 # 28 Rear bottom left
+v 2.0 1.0 1.0 1.0 1.0 1.0 # 29 Front top left
+v 3.0 1.0 1.0 1.0 1.0 1.0 # 30 Front top right
+v 3.0 1.0 0.0 1.0 1.0 1.0 # 31 Rear top right
+v 2.0 1.0 0.0 1.0 1.0 1.0 # 32 Rear top left
+
+# Wheel 3 Vertices (Rear Right)
+v 2.0 0.0 -1.0 1.0 1.0 1.0 # 33 Front bottom left
+v 3.0 0.0 -1.0 1.0 1.0 1.0 # 34 Front bottom right
+v 3.0 0.0 -0.0 1.0 1.0 1.0 # 35 Rear bottom right
+v 2.0 0.0 -0.0 1.0 1.0 1.0 # 36 Rear bottom left
+v 2.0 1.0 -1.0 1.0 1.0 1.0 # 37 Front top left
+v 3.0 1.0 -1.0 1.0 1.0 1.0 # 38 Front top right
+v 3.0 1.0 -0.0 1.0 1.0 1.0 # 39 Rear top right
+v 2.0 1.0 -0.0 1.0 1.0 1.0 # 40 Rear top left
+
+# Wheel 4 Vertices (Rear Left)
+v -3.0 0.0 -1.0 1.0 1.0 1.0 # 41 Front bottom left
+v -2.0 0.0 -1.0 1.0 1.0 1.0 # 42 Front bottom right
+v -2.0 0.0 -0.0 1.0 1.0 1.0 # 43 Rear bottom right
+v -3.0 0.0 -0.0 1.0 1.0 1.0 # 44 Rear bottom left
+v -3.0 1.0 -1.0 1.0 1.0 1.0 # 45 Front top left
+v -2.0 1.0 -1.0 1.0 1.0 1.0 # 46 Front top right
+v -2.0 1.0 -0.0 1.0 1.0 1.0 # 47 Rear top right
+v -3.0 1.0 -0.0 1.0 1.0 1.0 # 48 Rear top left
+
+
+# FRONT RIGHT
+f 9 10 14 13  
+f 10 11 15 14  
+f 11 12 16 15  
+f 12 9 13 16  
+f 13 14 15 16  
+f 9 10 11 12  
+
+# REAR RIGHT
+f 17 18 22 21  
+f 18 19 23 22  
+f 19 20 24 23  
+f 20 17 21 24  
+f 21 22 23 24  
+f 17 18 19 20  
+
+f 25 26 30 29  
+f 26 27 31 30  
+f 27 28 32 31  
+f 28 25 29 32  
+f 29 30 31 32  
+f 25 26 27 28  
