@@ -17,16 +17,19 @@ DkCar::DkCar(lve::LveDevice &device) : device{device}
     carGameObject.transform.scale = glm::vec3(0.2, -0.2, 0.2);
     carGameObject.transform.translation = glm::vec3(0.0f, -0.2f, 0.0f);
     carGameObject.transform.rotation = glm::vec3(0.0);
+    carGameObject.color = {.1f, .1f, .1f};
 };
 // DkCar::~DkCar();
 
 void DkCar::draw(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline)
 {
+    static auto position = carGameObject.transform.translation;
 
     carModel->bind(commandBuffer);
     SimplePushConstantData carPush{};
     auto carTransform = (camera.getProjection() * camera.getView()) * carGameObject.transform.mat4();
     carPush.transform = carTransform;
+    carPush.color = glm::vec3(1.0f, 0.0f, 0.0f);
     vkCmdPushConstants(
         commandBuffer,
         pipeline,
@@ -37,44 +40,57 @@ void DkCar::draw(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, Vk
     carModel->draw(commandBuffer);
     wheelModel->bind(commandBuffer);
     std::vector<glm::vec3> relOffset = {
-        glm::vec3(1.5f, 0.1, 1.5f),   // Front Right
         glm::vec3(-1.5f, 0.1, 1.5f),  // Front Left
-        glm::vec3(1.5f, 0.1, -1.5f),  // Back Right
         glm::vec3(-1.5f, 0.1, -1.5f), // Back Left
+        glm::vec3(1.5f, 0.1, -1.5f),  // Back Right
+        glm::vec3(1.5f, 0.1, 1.5f),   // Front Right
+
     };
-    // glm::mat4 smallerScale = carGameObject.transform.m
-    static float wheelRotationAngle = 0.0f;
+
     static auto currentTime = std::chrono::high_resolution_clock::now();
-    float turnAngleRadians = glm::radians(turnAngle);
+
+    static float wheelRotationAngle = 0.0f;
+    auto wheelSpinTransform = glm::mat4(1.0f);
+
     if (isMoving)
     {
+
+        printf("%d", isMovingForward);
         auto newTime = std::chrono::high_resolution_clock::now();
         float frameTime =
             std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
         currentTime = newTime;
+        auto wheelSpinSpeed = 4.0f; // Corrected to use isMovingForward for direction
+
         if (isMovingForward)
         {
+
+            wheelRotationAngle += wheelSpinSpeed * frameTime;
+            wheelSpinTransform = glm::rotate(glm::mat4(1.0f), wheelRotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
         }
-        auto wheelSpinSpeed = 4.0f;                       // Define how fast the wheels spin
-        wheelRotationAngle += wheelSpinSpeed * frameTime; // Increase the wheel's rotation angle based on time and speed
+        else
+        {
+            wheelRotationAngle += -(wheelSpinSpeed * frameTime);
+            printf("%f", wheelRotationAngle);
+            wheelSpinTransform = glm::rotate(glm::mat4(1.0f), wheelRotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+        }
+        wheelRotationAngle = fmod(wheelRotationAngle, 2.0f * 3.14f);
     }
+
     for (int i = 0; i < 4; i++)
     {
+        SimplePushConstantData wheelPush{};
+
         glm::mat4 wheelRelativeTransform = glm::translate(glm::mat4(1.0f), relOffset[i]);
-
-        // Apply rotation to the wheel for spinning
-        glm::mat4 wheelSpinRotation = glm::rotate(glm::mat4(1.0f), wheelRotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
-
-        // Apply steering rotation to the front wheels
-        glm::mat4 wheelSteerRotation = glm::mat4(1.0f); // Identity matrix for rear wheels
-        if (i == 1 || i == 3)
-        { // Assuming indices 0 and 1 are the front wheels
-            wheelSteerRotation = glm::rotate(glm::mat4(1.0f), turnAngleRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+        auto wheelSteerTransform = glm::mat4(1.0f);
+        if (i == 0 || i == 1) // Corrected indices for front wheels
+        {
+            wheelSteerTransform = glm::rotate(glm::mat4(1.0f), glm::radians(turnAngle), glm::vec3(0.0f, 1.0f, 0.0f));
+            wheelPush.color = carGameObject.color;
         }
 
-        auto wheelTransform = carGameObject.transform.mat4() * wheelRelativeTransform * wheelSpinRotation * wheelSteerRotation;
+        auto wheelTransform = carGameObject.transform.mat4() * wheelRelativeTransform * wheelSteerTransform * wheelSpinTransform;
 
-        SimplePushConstantData wheelPush{};
         wheelPush.transform = (camera.getProjection() * camera.getView()) * wheelTransform;
         vkCmdPushConstants(
             commandBuffer,

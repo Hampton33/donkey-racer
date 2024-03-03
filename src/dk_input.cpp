@@ -15,26 +15,39 @@ void handle_input(GLFWwindow *window, lve::LveGameObject &gameObject, DkCar &car
         std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
     currentTime = newTime;
     glm::vec3 rotate{0};
-    if (glfwGetKey(window, keys.lookRight) == GLFW_PRESS)
+    // if (glfwGetKey(window, keys.lookRight) == GLFW_PRESS)
+    //     rotate.y += 1.f;
+    // if (glfwGetKey(window, keys.lookLeft) == GLFW_PRESS)
+    //     rotate.y -= 1.f;
+    // if (glfwGetKey(window, keys.lookUp) == GLFW_PRESS)
+    //     rotate.x += 1.f;
+    // if (glfwGetKey(window, keys.lookDown) == GLFW_PRESS)
+    //     rotate.x -= 1.f;
+    if (glfwGetKey(window, keys.moveRight) == GLFW_PRESS)
+    {
         rotate.y += 1.f;
-    if (glfwGetKey(window, keys.lookLeft) == GLFW_PRESS)
-        rotate.y -= 1.f;
-    if (glfwGetKey(window, keys.lookUp) == GLFW_PRESS)
-        rotate.x += 1.f;
-    if (glfwGetKey(window, keys.lookDown) == GLFW_PRESS)
-        rotate.x -= 1.f;
+        auto hehe = car.turnAngle + 1.0f;
+        car.turnAngle = glm::clamp(hehe, -45.0f, 45.0f); // Correct
+    }
 
+    if (glfwGetKey(window, keys.moveLeft) == GLFW_PRESS)
+    {
+        rotate.y -= 1.f;
+        auto hehe = car.turnAngle - 1.0f;
+        car.turnAngle = glm::clamp(hehe, -45.0f, 45.0f); // Correct
+    }
     if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon())
     {
-        gameObject.transform.rotation += lookSpeed * frameTime * glm::normalize(rotate);
+        car.carGameObject.transform.rotation += lookSpeed * frameTime * glm::normalize(rotate);
     }
 
     // limit pitch values between about +/- 85ish degrees
-    gameObject.transform.rotation.x = glm::clamp(gameObject.transform.rotation.x, -1.5f, 1.5f);
-    gameObject.transform.rotation.y = glm::mod(gameObject.transform.rotation.y, glm::two_pi<float>());
+    // gameObject.transform.rotation.x = glm::clamp(gameObject.transform.rotation.x, -1.5f, 1.5f);
+    // gameObject.transform.rotation.y = glm::mod(gameObject.transform.rotation.y, glm::two_pi<float>());
 
-    float yaw = gameObject.transform.rotation.y;
+    float yaw = car.carGameObject.transform.rotation.y - glm::half_pi<float>(); // t.transform.rotation.y;
     const glm::vec3 forwardDir{sin(yaw), 0.f, cos(yaw)};
+    // printf("forwardDir: %f %f %f", forwardDir.x, forwardDir.y, forwardDir.z);
     const glm::vec3 rightDir{forwardDir.z, 0.f, -forwardDir.x};
     const glm::vec3 upDir{0.f, -1.f, 0.f};
 
@@ -43,19 +56,6 @@ void handle_input(GLFWwindow *window, lve::LveGameObject &gameObject, DkCar &car
         moveDir += forwardDir;
     if (glfwGetKey(window, keys.moveBackward) == GLFW_PRESS)
         moveDir -= forwardDir;
-    if (glfwGetKey(window, keys.moveRight) == GLFW_PRESS)
-    {
-
-        auto hehe = car.turnAngle + 1.0f;
-        car.turnAngle = glm::clamp(hehe, -45.0f, 45.0f); // Correct
-    }
-
-    if (glfwGetKey(window, keys.moveLeft) == GLFW_PRESS)
-    {
-
-        auto hehe = car.turnAngle - 1.0f;
-        car.turnAngle = glm::clamp(hehe, -45.0f, 45.0f); // Correct
-    }
 
     if (glfwGetKey(window, keys.moveUp) == GLFW_PRESS)
         moveDir += upDir;
@@ -65,6 +65,7 @@ void handle_input(GLFWwindow *window, lve::LveGameObject &gameObject, DkCar &car
     // Apply movement if there is a direction to move in
     if (glm::length(moveDir) > 0)
     {
+        // printf("Move Dir: %f %f %f", moveDir.x, moveDir.y, moveDir.z);
         if (moveDir.z < 0.f)
         {
             car.isMovingForward = false;
@@ -73,9 +74,10 @@ void handle_input(GLFWwindow *window, lve::LveGameObject &gameObject, DkCar &car
         {
             car.isMovingForward = true;
         }
-        printf("Move Dir: %f %f %f", moveDir.x, moveDir.y, moveDir.z);
+        // printf("Move Dir: %f %f %f", moveDir.x, moveDir.y, moveDir.z);
         car.isMoving = true;
         gameObject.transform.translation += moveSpeed * frameTime * glm::normalize(moveDir);
+        // car.carGameObject.transform.translation += moveSpeed * frameTime * glm::normalize(moveDir);
     }
     else
     {

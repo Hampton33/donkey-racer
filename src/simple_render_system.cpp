@@ -75,34 +75,28 @@ namespace lve
       DkCar &car)
   {
     lvePipeline->bind(commandBuffer);
-
-    auto projectionView = camera.getProjection() * camera.getView();
-
     LveGameObject &ground = gameObjects[0];
     LveGameObject &skybox = gameObjects[1];
-    // LveGameObject &car = gameObjects[2];
-    // LveGameObject &wheels = gameObjects[3];
-    //  Correctly handling the skybox rotation to match the camera's rotation
-    glm::mat4 cameraRotationMatrix = glm::mat4(camera.viewMatrix);
-    glm::mat4 skyboxViewMatrix = cameraRotationMatrix; // Directly use the camera's rotation
-    glm::mat4 finalTransform = projectionView * skyboxViewMatrix * skybox.transform.mat4();
+    auto projectionView = camera.getProjection() * camera.getView();
 
-    SimplePushConstantData push{};
-    push.transform = finalTransform;
+    SimplePushConstantData skyboxPush{};
+    skyboxPush.color = skybox.color;
+    skybox.transform.translation = glm::vec3(viewerObject.transform.translation.x, 0.0f, viewerObject.transform.translation.z); // Adjust y-axis to position the ground
+    skyboxPush.transform = projectionView * skybox.transform.mat4();
     vkCmdPushConstants(
         commandBuffer,
         pipelineLayout,
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(SimplePushConstantData),
-        &push);
+        &skyboxPush);
     ;
     skybox.model->bind(commandBuffer);
     skybox.model->draw(commandBuffer);
 
     SimplePushConstantData groundPush{};
+    ground.transform.translation = glm::vec3(viewerObject.transform.translation.x, 0.5f, viewerObject.transform.translation.z); // Adjust y-axis to position the ground
     groundPush.color = ground.color;
-    // ground.transform.translation = glm::vec3(viewerObject.transform.translation.x, 0.5f, viewerObject.transform.translation.z); // Adjust y-axis to position the ground
     groundPush.transform = projectionView * ground.transform.mat4();
 
     vkCmdPushConstants(
@@ -115,6 +109,24 @@ namespace lve
 
     ground.model->bind(commandBuffer);
     ground.model->draw(commandBuffer);
+
+    LveGameObject &carXD = gameObjects[2];
+    SimplePushConstantData carXDPush{};
+    // carXD.transform.translation = glm::vec3(viewerObject.transform.translation.x, 0.0f, viewerObject.transform.translation.z); // Adjust y-axis to position the carXD
+    carXDPush.color = carXD.color;
+    carXD.transform.translation = glm::vec3(1.0f, -1.0f, 1.0f);
+    carXDPush.transform = projectionView * carXD.transform.mat4();
+
+    vkCmdPushConstants(
+        commandBuffer,
+        pipelineLayout,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(SimplePushConstantData),
+        &carXDPush);
+
+    carXD.model->bind(commandBuffer);
+    carXD.model->draw(commandBuffer);
     car.draw(commandBuffer, camera, pipelineLayout);
     /* SimplePushConstantData carPush{};
     carPush.color = car.color;

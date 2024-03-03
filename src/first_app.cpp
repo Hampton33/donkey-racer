@@ -37,10 +37,13 @@ namespace lve
       glfwPollEvents();
       handle_input(lveWindow.getWindow(), viewerObject, car);
       camera.setViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
+      car.carGameObject.transform.translation = viewerObject.transform.translation - glm::vec3{2.f, -2.f, 0.f};
+      camera.setViewTarget(viewerObject.transform.translation + glm::vec3{1.2f, -0.5f, -0.f}, car.carGameObject.transform.translation + glm::vec3{0.2f, -0.5f, 0.f});
       float aspect = lveRenderer.getAspectRatio();
       // camera.setOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
       camera.setPerspectiveProjection(glm::radians(50.f), aspect, 0.1f, 10.f);
-      car.carGameObject.transform.translation = viewerObject.transform.translation - glm::vec3{2.f, -2.f, 0.f};
+      // car.carGameObject.transform.rotation.z = -viewerObject.transform.rotation.z;
+      // viewerObject.transform.translation=   glm::vec3{2.f, -2.f, 0.f} -;
       if (auto commandBuffer = lveRenderer.beginFrame())
       {
         lveRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -112,22 +115,22 @@ namespace lve
     gameObjects.push_back(std::move(ground));
 
     auto sky = LveGameObject::createGameObject();
-    sky.model = wallModel;
+    sky.model = xdModel;
     sky.transform.scale = glm::vec3(10.0f, 10.0f, 10.0f);
     sky.transform.translation = glm::vec3(0.0f, 0.0f, 0.0f);
     sky.color = glm::vec3(1.0f, 1.0f, 1.0f);
     // sky.transform.rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f)
     gameObjects.push_back(std::move(sky));
 
-    // std::shared_ptr<LveModel> carM = LveModel::createModelFromFile(lveDevice, "models/ghetto_car.obj");
-    // auto car = LveGameObject::createGameObject();
-    // car.model = carM;
-    // car.transform.scale = glm::vec3(0.2, 0.2, 0.2);
-    // car.transform.translation = glm::vec3(0.0f, 0.0f, 0.0f);
-    //// test.color = glm::vec3(1.0f, 1.0f, 1.0f);
-    ////  sky.transform.rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f)
-    // gameObjects.push_back(std::move(car));
-    //
+    std::shared_ptr<LveModel> carM = LveModel::createModelFromFile(lveDevice, "models/ghetto_car.obj");
+    auto car = LveGameObject::createGameObject();
+    car.model = carM;
+    car.transform.scale = glm::vec3(0.5, 0.5, 0.5);
+    car.transform.translation = glm::vec3(0.0f, -0.2f, 0.0f);
+    car.color = glm::vec3(0.0f, 1.0f, 0.0f);
+    //  sky.transform.rotation = glm::vec3(0.0f, glm::radians(90.0f), 0.0f)
+    gameObjects.push_back(std::move(car));
+
     // std::shared_ptr<LveModel> wheelsM = LveModel::createModelFromFile(lveDevice, "models/cube.obj");
     // auto wheels = LveGameObject::createGameObject();
     // wheels.model = wheelsM;
