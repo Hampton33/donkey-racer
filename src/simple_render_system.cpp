@@ -71,7 +71,6 @@ namespace lve
       VkCommandBuffer commandBuffer,
       std::vector<LveGameObject> &gameObjects,
       const LveCamera &camera,
-      LveGameObject &viewerObject,
       DkCar &car)
   {
     lvePipeline->bind(commandBuffer);
@@ -80,8 +79,7 @@ namespace lve
     auto projectionView = camera.getProjection() * camera.getView();
 
     SimplePushConstantData skyboxPush{};
-    skyboxPush.color = skybox.color;
-    skybox.transform.translation = glm::vec3(viewerObject.transform.translation.x, 0.0f, viewerObject.transform.translation.z); // Adjust y-axis to position the ground
+
     skyboxPush.transform = projectionView * skybox.transform.mat4();
     vkCmdPushConstants(
         commandBuffer,
@@ -91,11 +89,12 @@ namespace lve
         sizeof(SimplePushConstantData),
         &skyboxPush);
     ;
+    // skybox.transform.rotation
     skybox.model->bind(commandBuffer);
     skybox.model->draw(commandBuffer);
 
     SimplePushConstantData groundPush{};
-    ground.transform.translation = glm::vec3(viewerObject.transform.translation.x, 0.5f, viewerObject.transform.translation.z); // Adjust y-axis to position the ground
+    // ground.transform.translation = glm::vec3(car.carGameObject.transform.translation.x, 0.0f, car.carGameObject.transform.translation.z); // Adjust y-axis to position the ground
     groundPush.color = ground.color;
     groundPush.transform = projectionView * ground.transform.mat4();
 
@@ -110,63 +109,24 @@ namespace lve
     ground.model->bind(commandBuffer);
     ground.model->draw(commandBuffer);
 
-    LveGameObject &carXD = gameObjects[2];
-    SimplePushConstantData carXDPush{};
-    // carXD.transform.translation = glm::vec3(viewerObject.transform.translation.x, 0.0f, viewerObject.transform.translation.z); // Adjust y-axis to position the carXD
-    carXDPush.color = carXD.color;
-    carXD.transform.translation = glm::vec3(1.0f, -1.0f, 1.0f);
-    carXDPush.transform = projectionView * carXD.transform.mat4();
+    // LveGameObject &carXD = gameObjects[2];
+    // SimplePushConstantData carXDPush{};
 
-    vkCmdPushConstants(
-        commandBuffer,
-        pipelineLayout,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        0,
-        sizeof(SimplePushConstantData),
-        &carXDPush);
+    // carXDPush.color = carXD.color;
+    // carXD.transform.translation = glm::vec3(1.0f, -1.0f, 1.0f);
+    // carXDPush.transform = projectionView * carXD.transform.mat4();
 
-    carXD.model->bind(commandBuffer);
-    carXD.model->draw(commandBuffer);
+    // vkCmdPushConstants(
+    //     commandBuffer,
+    //     pipelineLayout,
+    //     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+    //     0,
+    //     sizeof(SimplePushConstantData),
+    //     &carXDPush);
+
+    // carXD.model->bind(commandBuffer);
+    // carXD.model->draw(commandBuffer);
     car.draw(commandBuffer, camera, pipelineLayout);
-    /* SimplePushConstantData carPush{};
-    carPush.color = car.color;
-    // ground.transform.translation = glm::vec3(viewerObject.transform.translation.x, 0.5f, viewerObject.transform.translation.z); // Adjust y-axis to position the ground
-    carPush.transform = projectionView * car.transform.mat4();
-
-    vkCmdPushConstants(
-        commandBuffer,
-        pipelineLayout,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        0,
-        sizeof(SimplePushConstantData),
-        &carPush);
-
-    car.model->bind(commandBuffer);
-    car.model->draw(commandBuffer);
-
-    SimplePushConstantData wheelsPush{};
-    static auto currentTime = std::chrono::high_resolution_clock::now();
-    auto newTime = std::chrono::high_resolution_clock::now();
-    float frameTime =
-        std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
-    currentTime = newTime;
-    auto rotate = glm::vec3(0.f);
-    rotate.z += 1.5f;
-    auto lookSpeed{1.5f};
-    wheels.transform.rotation += lookSpeed * frameTime * glm::normalize(rotate);
-
-    wheelsPush.color = wheels.color;
-    wheelsPush.transform = projectionView * wheels.transform.mat4();
-    vkCmdPushConstants(
-        commandBuffer,
-        pipelineLayout,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        0,
-        sizeof(SimplePushConstantData),
-        &wheelsPush);
-
-    wheels.model->bind(commandBuffer);
-    wheels.model->draw(commandBuffer); */
   }
 
-} // namespace lve
+}

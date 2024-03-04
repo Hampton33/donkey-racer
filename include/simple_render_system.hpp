@@ -24,7 +24,7 @@ namespace lve
         VkCommandBuffer commandBuffer,
         std::vector<LveGameObject> &gameObjects,
         const LveCamera &camera,
-        LveGameObject &viewerObject, DkCar &car);
+        DkCar &car);
 
   private:
     void createPipelineLayout();

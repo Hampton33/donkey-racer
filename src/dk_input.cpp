@@ -1,9 +1,8 @@
 #include "dk_input.hpp"
 #include <chrono>
-void handle_input(GLFWwindow *window, lve::LveGameObject &gameObject, DkCar &car)
+void handle_input(GLFWwindow *window, DkCar &car)
 {
 
-    auto isXD = false;
     static float moveSpeed{3.f};
     static float lookSpeed{1.5f};
     struct KeyMappings keys
@@ -36,14 +35,12 @@ void handle_input(GLFWwindow *window, lve::LveGameObject &gameObject, DkCar &car
         auto hehe = car.turnAngle - 1.0f;
         car.turnAngle = glm::clamp(hehe, -45.0f, 45.0f); // Correct
     }
-    if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon())
-    {
-        car.carGameObject.transform.rotation += lookSpeed * frameTime * glm::normalize(rotate);
-    }
 
-    // limit pitch values between about +/- 85ish degrees
-    // gameObject.transform.rotation.x = glm::clamp(gameObject.transform.rotation.x, -1.5f, 1.5f);
-    // gameObject.transform.rotation.y = glm::mod(gameObject.transform.rotation.y, glm::two_pi<float>());
+    if (rotate.y == 0 && car.turnAngle != 0)
+    {
+        float dampingFactor = 5.0f; // Adjust this value to control the rate of return
+        car.turnAngle -= dampingFactor * car.turnAngle * frameTime;
+    }
 
     float yaw = car.carGameObject.transform.rotation.y - glm::half_pi<float>(); // t.transform.rotation.y;
     const glm::vec3 forwardDir{sin(yaw), 0.f, cos(yaw)};
@@ -56,16 +53,23 @@ void handle_input(GLFWwindow *window, lve::LveGameObject &gameObject, DkCar &car
         moveDir += forwardDir;
     if (glfwGetKey(window, keys.moveBackward) == GLFW_PRESS)
         moveDir -= forwardDir;
-
     if (glfwGetKey(window, keys.moveUp) == GLFW_PRESS)
         moveDir += upDir;
     if (glfwGetKey(window, keys.moveDown) == GLFW_PRESS)
         moveDir -= upDir;
 
-    // Apply movement if there is a direction to move in
     if (glm::length(moveDir) > 0)
     {
-        // printf("Move Dir: %f %f %f", moveDir.x, moveDir.y, moveDir.z);
+        if (glm::dot(rotate, rotate) > std::numeric_limits<float>::epsilon())
+        {
+            if (glm::dot(moveDir, forwardDir) < 0)
+            {
+                rotate = -rotate;
+            }
+            car.carGameObject.transform.rotation += lookSpeed * frameTime * glm::normalize(rotate);
+            printf("rotating: %f %f %f \n", car.carGameObject.transform.rotation.x, car.carGameObject.transform.rotation.y, car.carGameObject.transform.rotation.z);
+            printf("translatiion: %f %f %f\n", car.carGameObject.transform.translation.x, car.carGameObject.transform.translation.y, car.carGameObject.transform.translation.z);
+        }
         if (moveDir.z < 0.f)
         {
             car.isMovingForward = false;
@@ -74,13 +78,13 @@ void handle_input(GLFWwindow *window, lve::LveGameObject &gameObject, DkCar &car
         {
             car.isMovingForward = true;
         }
-        // printf("Move Dir: %f %f %f", moveDir.x, moveDir.y, moveDir.z);
         car.isMoving = true;
-        gameObject.transform.translation += moveSpeed * frameTime * glm::normalize(moveDir);
-        // car.carGameObject.transform.translation += moveSpeed * frameTime * glm::normalize(moveDir);
+        car.carGameObject.transform.translation += moveSpeed * frameTime * glm::normalize(moveDir);
     }
     else
     {
         car.isMoving = false;
     }
+    // car.carGameObject.transform.rotation.z = 0.0f;
+    // car.carGameObject.transform.translation.y = 0.0f;
 }

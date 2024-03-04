@@ -17,4 +17,4 @@ struct KeyMappings
     int lookDown = GLFW_KEY_DOWN;
 };
 
-void handle_input(GLFWwindow *window, lve::LveGameObject &gameObject, DkCar &car);
+void handle_input(GLFWwindow *window, DkCar &car);

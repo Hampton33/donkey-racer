@@ -15,20 +15,18 @@ DkCar::DkCar(lve::LveDevice &device) : device{device}
 
     carGameObject.model = carModel;
     carGameObject.transform.scale = glm::vec3(0.2, -0.2, 0.2);
-    carGameObject.transform.translation = glm::vec3(0.0f, -0.2f, 0.0f);
-    carGameObject.transform.rotation = glm::vec3(0.0);
+    carGameObject.transform.translation = glm::vec3(0.0f, 0.0f, 0.0f);
+    carGameObject.transform.rotation = glm::vec3(0.0, 0.0, 0.0);
     carGameObject.color = {.1f, .1f, .1f};
 };
 // DkCar::~DkCar();
 
 void DkCar::draw(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline)
 {
-    static auto position = carGameObject.transform.translation;
-
+    auto xd = camera.getProjection() * camera.getView();
     carModel->bind(commandBuffer);
     SimplePushConstantData carPush{};
-    auto carTransform = (camera.getProjection() * camera.getView()) * carGameObject.transform.mat4();
-    carPush.transform = carTransform;
+    carPush.transform = xd * carGameObject.transform.mat4();
     carPush.color = glm::vec3(1.0f, 0.0f, 0.0f);
     vkCmdPushConstants(
         commandBuffer,
