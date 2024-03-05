@@ -23,16 +23,19 @@ namespace lve
 
   void FirstApp::run()
   {
-
+    glm::vec3 cameraOffset = glm::vec3{3.0f, -3.0f, 3.0f}; // Adjust this offset as needed
     SimpleRenderSystem simpleRenderSystem{lveDevice, lveRenderer.getSwapChainRenderPass()};
     LveCamera camera{};
     DkCar car(lveDevice);
     while (!lveWindow.shouldClose())
     {
+      glm::vec3 cameraPosition = car.carGameObject.transform.translation + cameraOffset;
+
       glfwPollEvents(); // - glm::vec3{0.0f, -1.0f, 0.0f},
       handle_input(lveWindow.getWindow(), car);
       // camera.setViewYXZ(glm::vec3{0.0f, -2.0f, 0.0f}, glm::vec3{0.0f, 2.0f, 0.0f});
-      camera.setViewDirection(glm::vec3{0.0f, -1.0f, 0.0f}, car.carGameObject.transform.translation); // car.carGameObject.transform.translation - glm::vec3{-2.0f, -5.0f, 0.0f}); // + glm::vec3{-0.5f, -1.0f, 0.f});
+      camera.setViewTarget(cameraPosition, car.carGameObject.transform.translation, glm::vec3{0.f, -1.f, 0.f});
+
       float aspect = lveRenderer.getAspectRatio();
       camera.setPerspectiveProjection(glm::radians(50.f), aspect, 0.1f, 100.f);
       if (auto commandBuffer = lveRenderer.beginFrame())
@@ -56,15 +59,15 @@ namespace lve
     auto ground = LveGameObject::createGameObject();
     ground.model = groundModel;                                 // Make sure this model is a simple plane or a very flat cube
     ground.transform.scale = glm::vec3(10.0f, 0.0f, 10.0f);     // Slightly non-zero y scale
-    ground.transform.translation = glm::vec3(0.0f, 0.5f, 0.0f); // Adjust y-axis to position the ground
+    ground.transform.translation = glm::vec3(0.0f, 0.0f, 0.0f); // Adjust y-axis to position the ground
     ground.color = glm::vec3(0.0f, 1.0f, 0.0f);                 // Black ground
     gameObjects.push_back(std::move(ground));
 
     std::shared_ptr<LveModel> skyModel = LveModel::createModelFromFile(lveDevice, "models/skybox.obj");
     auto sky = LveGameObject::createGameObject();
     sky.model = skyModel;
-    sky.transform.scale = glm::vec3(10.0f, 10.0f, 10.0f);
-    sky.transform.translation = glm::vec3(0.0f, 0.1f, 0.0f);
+    sky.transform.scale = glm::vec3(10.0f, 5.0f, 10.0f);
+    sky.transform.translation = glm::vec3(0.0f, 0.0f, 0.0f);
     sky.color = glm::vec3(1.0f, 0.0f, 0.0f);
     gameObjects.push_back(std::move(sky));
 

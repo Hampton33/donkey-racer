@@ -53,7 +53,7 @@ void DkCar::draw(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, Vk
     if (isMoving)
     {
 
-        printf("%d", isMovingForward);
+        // printf("%d", isMovingForward);
         auto newTime = std::chrono::high_resolution_clock::now();
         float frameTime =
             std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
@@ -69,7 +69,7 @@ void DkCar::draw(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, Vk
         else
         {
             wheelRotationAngle += -(wheelSpinSpeed * frameTime);
-            printf("%f", wheelRotationAngle);
+            // printf("%f", wheelRotationAngle);
             wheelSpinTransform = glm::rotate(glm::mat4(1.0f), wheelRotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
         }
         wheelRotationAngle = fmod(wheelRotationAngle, 2.0f * 3.14f);

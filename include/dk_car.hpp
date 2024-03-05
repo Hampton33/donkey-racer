@@ -18,7 +18,7 @@ public:
     bool isMoving = true;
     bool isMovingForward = false;
     float turnAngle = 0.0f;
-    float movePerSecond = 1.0f;
+    glm::vec3 velocity = {0.0f, 0.0f, 0.0f};
 
 private:
     std::shared_ptr<lve::LveModel> carModel;

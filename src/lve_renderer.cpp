@@ -1,5 +1,6 @@
 #include "lve_renderer.hpp"
-
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 // std
 #include <array>
 #include <cassert>
@@ -91,7 +92,7 @@ namespace lve
     auto commandBuffer = getCurrentCommandBuffer();
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
     {
       throw std::runtime_error("failed to begin recording command buffer!");

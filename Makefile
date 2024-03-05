@@ -16,7 +16,7 @@ ifeq ($(OS),not)
     TARGET := $(TARGET).exe
     CXXFLAGS += -I./include -I./external/tinyobjloader -I./external/glfw/include -I./external/glm/include -IC:/VulkanSDK/1.3.275.0/Include
     LDFLAGS = -L./external/glfw/lib-mingw-w64 -LC:/VulkanSDK/1.3.275.0/Lib
-    LDLIBS = -lglfw3 -lvulkan-1 -lgdi32
+    LDLIBS = -lglfw3 -lvulkan-1 -lgdi32 -lws2_32
 else
     # Linux settings
     RM = rm -f

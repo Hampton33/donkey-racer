@@ -80,6 +80,7 @@ namespace lve
 
     SimplePushConstantData skyboxPush{};
 
+    skybox.transform.translation = car.carGameObject.transform.translation;
     skyboxPush.transform = projectionView * skybox.transform.mat4();
     vkCmdPushConstants(
         commandBuffer,
@@ -94,7 +95,7 @@ namespace lve
     skybox.model->draw(commandBuffer);
 
     SimplePushConstantData groundPush{};
-    // ground.transform.translation = glm::vec3(car.carGameObject.transform.translation.x, 0.0f, car.carGameObject.transform.translation.z); // Adjust y-axis to position the ground
+    ground.transform.translation = car.carGameObject.transform.translation;
     groundPush.color = ground.color;
     groundPush.transform = projectionView * ground.transform.mat4();
 

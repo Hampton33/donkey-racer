@@ -1,6 +1,6 @@
 
 #include "first_app.hpp"
-
+#include "dk_client.hpp"
 // std
 #include <cstdlib>
 #include <iostream>
@@ -8,6 +8,11 @@
 
 int main()
 {
+  std::cout << "Connecting to server..." << std::endl;
+  if (connectToServer() == 1)
+  {
+    std::cerr << "Failed to connect to server" << std::endl;
+  }
   lve::FirstApp app{};
 
   try
