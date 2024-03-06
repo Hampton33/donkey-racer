@@ -1,4 +1,4 @@
-//
+
 #pragma comment(lib, "Ws2_32.lib")
 #include "dk_client.hpp"
 #include "dk_car.hpp"
@@ -7,7 +7,30 @@
 // Client sends local player transform to server, as soon as recived by server, it will send that to all other clients. Server will also send notifcations on
 // Player connect and player disconnect
 
-int connectToServer()
+bool shouldTerminate{false};
+
+dk::DkClient::DkClient()
+{
+    if (tryConnect() == 1)
+    {
+        return;
+    }
+}
+
+dk::DkClient::~DkClient()
+{
+
+    if (thread.joinable())
+    {
+        shouldTerminate = true;
+        thread.join();
+        std::cout << "[CLIENT] Thread has been closed" << std::endl;
+    }
+
+    return;
+}
+
+int dk::DkClient::tryConnect()
 {
     WSADATA wsaData;
     SOCKET sock = INVALID_SOCKET;
@@ -64,105 +87,114 @@ int connectToServer()
         return 1;
     }
     // Start a new thread to handle communication
-    std::thread communicationThread(handleCommunication, sock);
-    communicationThread.detach(); // Optionally, detach the thread if you don't need to join it later
-
-    return 0; // Return control to the main program
+    thread = std::thread(communicationLoop, sock);
+    thread.detach();
+    return 0;
 }
 
-void handleCommunication(SOCKET sock)
+void dk::communicationLoop(SOCKET sock) // THREAD
 {
     int result;
-    char recvbuf[512];
-    char sendBuff[512] = {0}; // Initializes the entire buffer to zero
-
-    // Loop to keep the connection alive and handle incoming data
-    result = recv(sock, recvbuf, 511, 0);
-    if (result > 0)
-    {
-        recvbuf[result] = '\0'; // null-terminate
-        std::cout << "Received: " << recvbuf << std::endl;
-        // Handle sending data similarly with send()
-    }
-    else if (result == 0)
-    {
-        std::cout << "Connection closed" << std::endl;
-        return; // Exit loop if connection is closed
-    }
-    else
-    {
-        std::cerr << "recv failed with error: " << WSAGetLastError() << std::endl;
-        return; // Exit loop on error
-    }
+    char recvBuff[512];
+    char sendBuff[512] = {0};
 
     while (true)
     {
+        if (shouldTerminate)
 
-        int messageSize = 0;
-        // constructPlayerTransformMessage(sendBuff, messageSize);
-        float xdd = 120.0f;
-        float xdd2 = 150.0f;
+        {
+            break;
+        }
+        Player localPlayer(69, 0.0f, 0.0f, 0.0f);
+        C2SMessageType sendType = C2SMessageType::LocalPlayerPosition;
 
-        glm::vec3 vec2 = {xdd, xdd2, 130.0f};
-        // Correctly serialize the float into the send buffer
-        memcpy(sendBuff, &vec2, sizeof(vec2));
+        // WRAPPED IN {} SO IT UNLOCKS INSTANTLY WHEN FINISHED
+        {
+            std::lock_guard<std::mutex> lock(sync);
 
-        // Correctly serialize the second float into the send buffer, immediately following the first
-        // memcpy(sendBuff + sizeof(xdd), &xdd2, sizeof(xdd2));
-        // Now send the buffer over the socket
-        result = send(sock, sendBuff, sizeof(vec2), 0);
-        std::cout << "Sent: " << sendBuff << std::endl;
-        // std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        result = recv(sock, recvbuf, 511, 0);
+            localPlayer.x = players[0].x;
+            localPlayer.y = players[0].y;
+            localPlayer.z = players[0].z;
+        }
+
+        memcpy(sendBuff, &sendType, sizeof(sendType));
+        memcpy(sendBuff + sizeof(sendType), &localPlayer, sizeof(localPlayer));
+        size_t totalSize = sizeof(sendType) + sizeof(localPlayer);
+        result = send(sock, sendBuff, totalSize, 0);
+
+        result = recv(sock, recvBuff, 511, 0);
         if (result > 0)
         {
-            unsigned char typeOfEnum = recvbuf[0];
-            unsigned char numOfPlayers = recvbuf[1];
+            int offset = 0;
 
-            // Assuming playerID starts at index 2 and is 8 bytes long
-            int64_t playerID;
-            memcpy(&playerID, recvbuf + 2, sizeof(playerID));
+            // no enum matching yet
+            int32_t recvType;
+            memcpy(&recvType, recvBuff + offset, sizeof(recvType));
+            offset += sizeof(recvType);
 
-            // Assuming x, y, z floats follow immediately after playerID
-            float x, y, z;
-            memcpy(&x, recvbuf + 10, sizeof(x)); // x starts at index 10 (after typeOfEnum + numOfPlayers + playerID)
-            memcpy(&y, recvbuf + 14, sizeof(y)); // y follows x
-            memcpy(&z, recvbuf + 18, sizeof(z)); // z follows y
+            int32_t numOfPlayers;
+            memcpy(&numOfPlayers, recvBuff + offset, sizeof(numOfPlayers));
+            offset += sizeof(numOfPlayers);
 
-            std::cout << "Received:\n"
-                      << "Type of Enum: " << static_cast<int>(typeOfEnum) << "\n"
-                      << "Number of Players: " << static_cast<int>(numOfPlayers) << "\n"
-                      << "Player ID: " << playerID << "\n"
-                      << "Position - X: " << x << ", Y: " << y << ", Z: " << z << std::endl;
+            numOfPlayers = std::min(numOfPlayers, 10);
+            for (int i = 0; i < numOfPlayers; i++)
+            {
+                int64_t playerID;
+                float x, y, z;
+
+                memcpy(&playerID, recvBuff + offset, sizeof(playerID));
+                offset += sizeof(playerID);
+
+                memcpy(&x, recvBuff + offset, sizeof(x));
+                offset += sizeof(x);
+
+                memcpy(&y, recvBuff + offset, sizeof(y));
+                offset += sizeof(y);
+
+                memcpy(&z, recvBuff + offset, sizeof(z));
+                offset += sizeof(z);
+
+                std::lock_guard<std::mutex> lock(sync);
+
+                auto it = std::find_if(dk::players.begin(), dk::players.end(), [&playerID](const Player &player)
+                                       { return player.id == playerID; });
+
+                if (it != dk::players.end())
+                {
+                    it->x = x;
+                    it->y = y;
+                    it->z = z;
+                }
+                else
+                {
+                    dk::players.push_back(Player(playerID, x, y, z));
+                }
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         else if (result == 0)
         {
             std::cout << "Connection closed" << std::endl;
-            return; // Exit loop if connection is closed
+            break;
         }
         else
         {
             std::cerr << "recv failed with error: " << WSAGetLastError() << std::endl;
-            return; // Exit loop on error
+            break;
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(500)); // for now testing
     }
-    std::cout << "Server connection closed. Exiting communication thread..." << std::endl;
-    // Cleanup
+    std::cout << "[CLIENT THREAD] Loop has been broken. Closing connection and thread..." << std::endl;
     closesocket(sock);
     WSACleanup();
 }
 
-void constructPlayerTransformMessage(char sendBuff[512], int &messageSize)
+void dk::DkClient::updatePos(std::array<float, 3> pos)
 {
-    char enumNumber = 0;
-    memcpy(sendBuff, &enumNumber, sizeof(enumNumber));
+    std::lock_guard<std::mutex> lock(sync);
 
-    // Define the player's transform.
-    const float playerTransform[3] = {1.2, 1.2, 0.0};
-    std::cout << "SIZE" << sizeof(playerTransform) << std::endl;
-    // Copy the playerTransform data into the sendBuff, after the enum number.
-    memcpy(sendBuff + sizeof(enumNumber), &playerTransform, sizeof(playerTransform));
-
-    // Calculate the total size of the message.
-    messageSize = sizeof(enumNumber) + sizeof(playerTransform);
+    // LOCAL PLAYER WILL ALWAYS BE AT INDEX 0, SO THIS IS FINE (ALWAYS(I THINK))
+    players[0].x = pos[0];
+    players[0].y = pos[1];
+    players[0].z = pos[2];
 }

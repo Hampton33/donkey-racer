@@ -72,6 +72,10 @@ namespace lve
 
     VkPhysicalDeviceProperties properties;
 
+    // DK
+    VkPhysicalDevice getPhysicalDevice() { return physicalDevice; }
+    GLFWwindow *getWindow() { return window.getWindow(); }
+
   private:
     void createInstance();
     void setupDebugMessenger();

@@ -5,6 +5,7 @@
 #include "lve_renderer.hpp"
 #include "lve_window.hpp"
 #include "dk_input.hpp"
+#include "dk_client.hpp"
 // std
 #include <memory>
 #include <vector>
@@ -23,11 +24,12 @@ namespace lve
     FirstApp(const FirstApp &) = delete;
     FirstApp &operator=(const FirstApp &) = delete;
 
+    dk::DkClient client;
+    bool isThreadRunning() { return client.thread.joinable(); };
     void run();
 
   private:
     void loadGameObjects();
-
     LveWindow lveWindow{WIDTH, HEIGHT, "Vulkan Tutorial"};
     LveDevice lveDevice{lveWindow};
     LveRenderer lveRenderer{lveWindow, lveDevice};
