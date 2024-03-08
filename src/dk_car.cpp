@@ -19,7 +19,6 @@ DkCar::DkCar(lve::LveDevice &device) : device{device}
     carGameObject.transform.rotation = glm::vec3(0.0, 0.0, 0.0);
     carGameObject.color = {.1f, .1f, .1f};
 };
-// DkCar::~DkCar();
 
 void DkCar::draw(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline)
 {
@@ -38,10 +37,10 @@ void DkCar::draw(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, Vk
     carModel->draw(commandBuffer);
     wheelModel->bind(commandBuffer);
     std::vector<glm::vec3> relOffset = {
-        glm::vec3(-1.5f, 0.1, 1.5f),  // Front Left
-        glm::vec3(-1.5f, 0.1, -1.5f), // Back Left
-        glm::vec3(1.5f, 0.1, -1.5f),  // Back Right
-        glm::vec3(1.5f, 0.1, 1.5f),   // Front Right
+        glm::vec3(-1.5f, 0.1, 1.5f),
+        glm::vec3(-1.5f, 0.1, -1.5f),
+        glm::vec3(1.5f, 0.1, -1.5f),
+        glm::vec3(1.5f, 0.1, 1.5f),
 
     };
 
@@ -58,7 +57,7 @@ void DkCar::draw(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, Vk
         float frameTime =
             std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
         currentTime = newTime;
-        auto wheelSpinSpeed = 4.0f; // Corrected to use isMovingForward for direction
+        auto wheelSpinSpeed = 4.0f;
 
         if (isMovingForward)
         {
@@ -81,7 +80,7 @@ void DkCar::draw(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, Vk
 
         glm::mat4 wheelRelativeTransform = glm::translate(glm::mat4(1.0f), relOffset[i]);
         auto wheelSteerTransform = glm::mat4(1.0f);
-        if (i == 0 || i == 1) // Corrected indices for front wheels
+        if (i == 0 || i == 1)
         {
             wheelSteerTransform = glm::rotate(glm::mat4(1.0f), glm::radians(turnAngle), glm::vec3(0.0f, 1.0f, 0.0f));
             wheelPush.color = carGameObject.color;

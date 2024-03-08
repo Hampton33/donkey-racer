@@ -39,7 +39,7 @@ void handle_input(GLFWwindow *window, DkCar &car)
     }
     if (rotate.y == 0 && car.turnAngle != 0)
     {
-        float dampingFactor = 5.0f; // Adjust this value to control the rate of return
+        float dampingFactor = 5.0f;
         car.turnAngle -= dampingFactor * car.turnAngle * frameTime;
     }
 
@@ -77,11 +77,11 @@ void handle_input(GLFWwindow *window, DkCar &car)
         float accelerationFactor = std::min(0.5f + currentSpeed / maxAccelLength, 1.5f);
         accel += moveSpeed * accelerationFactor * frameTime * moveDir;
         car.isMoving = true;
-        printf("accelFactor: %f \n", accelerationFactor);
-        printf("currentSpeed: %f \n", currentSpeed);
-        // printf("maxAccelLength: %f \n", maxAccelLength);
-        //  printf("movedir: %f %f %f \n", accel.x, accel.y, accel.z);
-        //  printf("glm::length(moveDir): %f \n", glm::length(accel));
+        // printf("accelFactor: %f \n", accelerationFactor);
+        // printf("currentSpeed: %f \n", currentSpeed);
+        //  printf("maxAccelLength: %f \n", maxAccelLength);
+        //   printf("movedir: %f %f %f \n", accel.x, accel.y, accel.z);
+        //   printf("glm::length(moveDir): %f \n", glm::length(accel));
 
         // Check if the acceleration exceeds the maximum length
         if (glm::length(accel) > maxAccelLength)

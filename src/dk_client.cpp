@@ -2,6 +2,7 @@
 #pragma comment(lib, "Ws2_32.lib")
 #include "dk_client.hpp"
 #include "dk_car.hpp"
+
 // Server will send list current of players on initial contact
 
 // Client sends local player transform to server, as soon as recived by server, it will send that to all other clients. Server will also send notifcations on
@@ -11,20 +12,38 @@ bool shouldTerminate{false};
 
 dk::DkClient::DkClient()
 {
+    return;
+}
+
+void dk::DkClient::run()
+{
+    std::cout << "[CLIENT] CONSTRUCTER CALLED" << std::endl;
+    auto xdd = sizeof(Player);
+    printf("%d", xdd);
     if (tryConnect() == 1)
     {
+        std::cout << "[CLIENT] Failed to connect" << std::endl;
+        isThreadRunning = false;
         return;
+    }
+    else
+    {
+        std::cout << "[CLIENT] successful connect" << std::endl;
+        isThreadRunning = true;
     }
 }
 
 dk::DkClient::~DkClient()
 {
+    std::cout << "[CLIENT] DE-CONSTRUCTER CALLED" << std::endl;
 
-    if (thread.joinable())
+    if (isThreadRunning)
     {
         shouldTerminate = true;
-        thread.join();
+
+        // thread.join();
         std::cout << "[CLIENT] Thread has been closed" << std::endl;
+        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     return;
@@ -36,7 +55,6 @@ int dk::DkClient::tryConnect()
     SOCKET sock = INVALID_SOCKET;
     struct sockaddr_in server;
 
-    // Initialize Winsock
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (result != 0)
     {
@@ -44,7 +62,6 @@ int dk::DkClient::tryConnect()
         return 1;
     }
 
-    // Create socket
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == INVALID_SOCKET)
     {
@@ -56,7 +73,6 @@ int dk::DkClient::tryConnect()
     server.sin_family = AF_INET;
     server.sin_port = htons(6969);
 
-    // Convert IPv4 address from text to binary form
     result = inet_pton(AF_INET, "192.168.38.164", &server.sin_addr);
     if (result <= 0)
     {
@@ -66,7 +82,6 @@ int dk::DkClient::tryConnect()
         return 1;
     }
 
-    // Connect to server
     result = connect(sock, (struct sockaddr *)&server, sizeof(server));
     if (result == SOCKET_ERROR)
     {
@@ -76,16 +91,7 @@ int dk::DkClient::tryConnect()
         return 1;
     }
 
-    // Send message
-    const char *sendMessage = "Hello, world!";
-    result = send(sock, sendMessage, strlen(sendMessage), 0);
-    if (result == SOCKET_ERROR)
-    {
-        std::cerr << "Send failed with error: " << WSAGetLastError() << std::endl;
-        closesocket(sock);
-        WSACleanup();
-        return 1;
-    }
+    std::cout << "[CLIENT] CALLING TO START THREEAD" << std::endl;
     // Start a new thread to handle communication
     thread = std::thread(communicationLoop, sock);
     thread.detach();
@@ -94,24 +100,43 @@ int dk::DkClient::tryConnect()
 
 void dk::communicationLoop(SOCKET sock) // THREAD
 {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+    std::cout << "[CLIENT] STARTING THREAD" << std::endl;
     int result;
     char recvBuff[512];
-    char sendBuff[512] = {0};
+    char sendBuff[512];
 
+    uint64_t hashedID;
+
+    bool getLocalHash = true;
+    while (getLocalHash)
+    {
+        result = recv(sock, recvBuff, sizeof(hashedID), 0);
+        if (result > 0)
+        {
+            memcpy(&hashedID, recvBuff, sizeof(hashedID));
+            printf("[CLIENT] CLIENT HASH ID: %llu\n", hashedID);
+            getLocalHash = false;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    Player localPlayer(hashedID, 42.0f, 72.0f, -12.0f);
+    players.push_back(localPlayer);
     while (true)
     {
         if (shouldTerminate)
 
         {
+            printf("Should terminate");
             break;
-        }
-        Player localPlayer(69, 0.0f, 0.0f, 0.0f);
+        };
+
         C2SMessageType sendType = C2SMessageType::LocalPlayerPosition;
 
         // WRAPPED IN {} SO IT UNLOCKS INSTANTLY WHEN FINISHED
         {
             std::lock_guard<std::mutex> lock(sync);
-
             localPlayer.x = players[0].x;
             localPlayer.y = players[0].y;
             localPlayer.z = players[0].z;
@@ -128,36 +153,49 @@ void dk::communicationLoop(SOCKET sock) // THREAD
             int offset = 0;
 
             // no enum matching yet
-            int32_t recvType;
+            int32_t recvType = 0;
+
             memcpy(&recvType, recvBuff + offset, sizeof(recvType));
+            printf("[CLIENT] RECV TYPE: %d\n", recvType);
             offset += sizeof(recvType);
 
-            int32_t numOfPlayers;
+            int32_t numOfPlayers = 0;
             memcpy(&numOfPlayers, recvBuff + offset, sizeof(numOfPlayers));
+            printf("[CLIENT] RECV NUM OF PLAYERS: %d\n", numOfPlayers);
             offset += sizeof(numOfPlayers);
 
-            numOfPlayers = std::min(numOfPlayers, 10);
-            for (int i = 0; i < numOfPlayers; i++)
+            for (int32_t i = 0; i < numOfPlayers && i < 10; i++)
             {
-                int64_t playerID;
+                uint64_t playerID;
                 float x, y, z;
 
                 memcpy(&playerID, recvBuff + offset, sizeof(playerID));
                 offset += sizeof(playerID);
+                // printf("[CLIENT] RECV PLAYER ID: %llu\n", playerID);
 
                 memcpy(&x, recvBuff + offset, sizeof(x));
                 offset += sizeof(x);
+                // printf("[CLIENT] RECV PLAYER X: %f\n", x);
 
                 memcpy(&y, recvBuff + offset, sizeof(y));
                 offset += sizeof(y);
+                // printf("[CLIENT] RECV PLAYER Y: %f\n", y);
 
                 memcpy(&z, recvBuff + offset, sizeof(z));
                 offset += sizeof(z);
+                // printf("[CLIENT] RECV PLAYER Z: %f\n", z);
 
                 std::lock_guard<std::mutex> lock(sync);
 
                 auto it = std::find_if(dk::players.begin(), dk::players.end(), [&playerID](const Player &player)
                                        { return player.id == playerID; });
+
+                for (auto &player : dk::players)
+                {
+                    printf("PLAYER XD: %llu %f %f %f\n", player.id, player.x, player.y, player.z);
+                }
+
+                // printf("dk::players size: %d\n", dk::players.size());
 
                 if (it != dk::players.end())
                 {
@@ -189,12 +227,16 @@ void dk::communicationLoop(SOCKET sock) // THREAD
     WSACleanup();
 }
 
-void dk::DkClient::updatePos(std::array<float, 3> pos)
+void dk::DkClient::updatePos(glm::vec3 pos)
 {
     std::lock_guard<std::mutex> lock(sync);
-
+    if (players.size() == 0)
+    {
+        return;
+    }
     // LOCAL PLAYER WILL ALWAYS BE AT INDEX 0, SO THIS IS FINE (ALWAYS(I THINK))
-    players[0].x = pos[0];
-    players[0].y = pos[1];
-    players[0].z = pos[2];
+
+    players[0].x = pos.x;
+    players[0].y = pos.y;
+    players[0].z = pos.z;
 }

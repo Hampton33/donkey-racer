@@ -8,6 +8,7 @@
 #include <mutex>
 #include <vector>
 #include <array>
+#include <glm/glm.hpp>
 // g++ src/main.cpp -o client -lws2_32
 
 //
@@ -30,12 +31,12 @@ namespace dk
     // PLAYER STRUCT, SERVER WILL HAVE SAME PLAYER STRUCT
     struct Player
     {
-        int64_t id; // hashed client ip for other users, local can be whatever
+        uint64_t id; // hashed client ip for other users, local can be whatever
         float x;
         float y;
         float z;
 
-        Player(int64_t id, float x, float y, float z) : id(id), x(x), y(y), z(z) {}
+        Player(uint64_t id, float x, float y, float z) : id(id), x(x), y(y), z(z) {}
     };
 
     inline std::mutex sync;             // sync for thread shared access of players
@@ -46,8 +47,10 @@ namespace dk
     public:
         DkClient();
         ~DkClient(); // Will set shouldTerminate to true
-        void updatePos(std::array<float, 3> pos);
+        void run();
+        void updatePos(glm::vec3 pos);
         std::thread thread; // to check if thread is running or not use .joinable()
+        bool isThreadRunning;
 
     private:
         int tryConnect(); // zero for success,

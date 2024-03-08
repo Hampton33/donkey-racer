@@ -12,10 +12,7 @@ int main()
   lve::FirstApp app{};
   try
   {
-    if (!app.isThreadRunning())
-    {
-      std::cout << "Failed to connect to server" << std::endl;
-    }
+
     app.run();
   }
   catch (const std::exception &e)

@@ -23,12 +23,20 @@ namespace lve
 
   void FirstApp::run()
   {
+    client.run();
     glm::vec3 cameraOffset = glm::vec3{3.0f, -3.0f, 3.0f}; // Adjust this offset as needed
     SimpleRenderSystem simpleRenderSystem{lveDevice, lveRenderer.getSwapChainRenderPass()};
     LveCamera camera{};
     DkCar car(lveDevice);
+    int frame = 0;
     while (!lveWindow.shouldClose())
     {
+      frame++;
+      if (frame % 10 == 0 && client.isThreadRunning)
+      {
+        frame = 0;
+        client.updatePos(car.carGameObject.transform.translation);
+      }
       glm::vec3 cameraPosition = car.carGameObject.transform.translation + cameraOffset;
 
       glfwPollEvents(); // - glm::vec3{0.0f, -1.0f, 0.0f},

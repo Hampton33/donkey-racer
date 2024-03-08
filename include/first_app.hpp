@@ -25,7 +25,7 @@ namespace lve
     FirstApp &operator=(const FirstApp &) = delete;
 
     dk::DkClient client;
-    bool isThreadRunning() { return client.thread.joinable(); };
+    bool isThreadRunning() { return client.isThreadRunning; };
     void run();
 
   private:
