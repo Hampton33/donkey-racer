@@ -9,6 +9,10 @@
 #include <vector>
 #include <array>
 #include <glm/glm.hpp>
+
+#include "lve_game_object.hpp"
+#include "lve_model.hpp"
+#include "lve_camera.hpp"
 // g++ src/main.cpp -o client -lws2_32
 
 //
@@ -35,12 +39,25 @@ namespace dk
         float x;
         float y;
         float z;
+        std::unique_ptr<lve::LveGameObject> gameObject = nullptr;
+        Player(uint64_t id, float x, float y, float z) : id(id), x(x), y(y), z(z)
+        {
+            // Create a temporary LveGameObject and then move it to the heap for unique_ptr to manage.
+            auto tempGameObject = lve::LveGameObject::createGameObject();
+            gameObject = std::unique_ptr<lve::LveGameObject>(new lve::LveGameObject(std::move(tempGameObject)));
 
-        Player(uint64_t id, float x, float y, float z) : id(id), x(x), y(y), z(z) {}
+            gameObject->model = nullptr;
+            gameObject->transform.scale = glm::vec3(1.2, 1.2, 1.2);
+            gameObject->transform.translation = glm::vec3(0.0f, 0.0f, 0.0f);
+            gameObject->transform.rotation = glm::vec3(0.0, 0.0, 0.0);
+            gameObject->color = {.1f, .1f, .1f};
+        }
     };
 
     inline std::mutex sync;             // sync for thread shared access of players
     inline std::vector<Player> players; // local copy of players
+
+    void drawPlayers(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline, lve::LveDevice &device);
 
     class DkClient
     {

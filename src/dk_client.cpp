@@ -115,14 +115,14 @@ void dk::communicationLoop(SOCKET sock) // THREAD
         if (result > 0)
         {
             memcpy(&hashedID, recvBuff, sizeof(hashedID));
-            printf("[CLIENT] CLIENT HASH ID: %llu\n", hashedID);
+            // printf("[CLIENT] CLIENT HASH ID: %llu\n", hashedID);
             getLocalHash = false;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     Player localPlayer(hashedID, 42.0f, 72.0f, -12.0f);
-    players.push_back(localPlayer);
+    players.push_back(std::move(localPlayer));
     while (true)
     {
         if (shouldTerminate)
@@ -163,7 +163,7 @@ void dk::communicationLoop(SOCKET sock) // THREAD
             memcpy(&numOfPlayers, recvBuff + offset, sizeof(numOfPlayers));
             printf("[CLIENT] RECV NUM OF PLAYERS: %d\n", numOfPlayers);
             offset += sizeof(numOfPlayers);
-
+            std::set<uint64_t> receivedPlayerIDs;
             for (int32_t i = 0; i < numOfPlayers && i < 10; i++)
             {
                 uint64_t playerID;
@@ -186,12 +186,15 @@ void dk::communicationLoop(SOCKET sock) // THREAD
                 // printf("[CLIENT] RECV PLAYER Z: %f\n", z);
 
                 std::lock_guard<std::mutex> lock(sync);
-
+                receivedPlayerIDs.insert(playerID);
                 auto it = std::find_if(dk::players.begin(), dk::players.end(), [&playerID](const Player &player)
                                        { return player.id == playerID; });
 
+                int haha = 0;
                 for (auto &player : dk::players)
                 {
+                    printf("%d", i++);
+
                     printf("PLAYER XD: %llu %f %f %f\n", player.id, player.x, player.y, player.z);
                 }
 
@@ -202,11 +205,20 @@ void dk::communicationLoop(SOCKET sock) // THREAD
                     it->x = x;
                     it->y = y;
                     it->z = z;
+                    it->gameObject->transform.translation = glm::vec3(x, y, z);
                 }
                 else
                 {
+                    std::cout << "Player added to the list:" << playerID << std::endl;
                     dk::players.push_back(Player(playerID, x, y, z));
                 }
+                dk::players.erase(std::remove_if(dk::players.begin(), dk::players.end(),
+                                                 [&receivedPlayerIDs](const Player &player)
+                                                 {
+                                                     // Return true if player.id is NOT found in receivedPlayerIDs, marking it for removal
+                                                     return receivedPlayerIDs.find(player.id) == receivedPlayerIDs.end();
+                                                 }),
+                                  dk::players.end());
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -239,4 +251,45 @@ void dk::DkClient::updatePos(glm::vec3 pos)
     players[0].x = pos.x;
     players[0].y = pos.y;
     players[0].z = pos.z;
+}
+
+struct SimplePushConstantData
+{
+    glm::mat4 transform{1.f};
+    alignas(16) glm::vec3 color{};
+};
+
+namespace dk
+{
+
+    void drawPlayers(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline, lve::LveDevice &device)
+    {
+
+        std::lock_guard<std::mutex> lock(sync);
+        auto modelPtr = players[0].gameObject->model;
+        players[0].gameObject->model->bind(commandBuffer);
+        SimplePushConstantData carPush{};
+        // Skip first index as this is local player, and is drawn in dk_car, perhaps I ought ot merge the two but I rlly cba wanna finish this asap. Can do later
+        for (int i = 1; i++; i < players.size())
+        {
+            printf("hello");
+            auto &player = players[i];
+            if (player.gameObject == nullptr)
+            {
+                player.gameObject->model = modelPtr;
+            }
+            auto viewProj = camera.getProjection() * camera.getView();
+            carPush.transform = viewProj * player.gameObject->transform.mat4();
+            carPush.color = glm::vec3(1.0f, 0.0f, 0.0f);
+            vkCmdPushConstants(
+                commandBuffer,
+                pipeline,
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                0,
+                sizeof(SimplePushConstantData),
+                &carPush);
+            player.gameObject->model->draw(commandBuffer);
+        }
+    }
+
 }

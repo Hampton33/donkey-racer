@@ -75,6 +75,7 @@ void handle_input(GLFWwindow *window, DkCar &car)
             car.carGameObject.transform.rotation += lookSpeed * frameTime * glm::normalize(rotate);
         }
         float accelerationFactor = std::min(0.5f + currentSpeed / maxAccelLength, 1.5f);
+
         accel += moveSpeed * accelerationFactor * frameTime * moveDir;
         car.isMoving = true;
         // printf("accelFactor: %f \n", accelerationFactor);

@@ -27,6 +27,8 @@ namespace lve
     dk::DkClient client;
     bool isThreadRunning() { return client.isThreadRunning; };
     void run();
+    std::shared_ptr<LveModel> carcarModel = nullptr;
+    void makeModelForPlayers(std::vector<dk::Player> &players);
 
   private:
     void loadGameObjects();

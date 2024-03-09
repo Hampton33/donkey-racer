@@ -5,7 +5,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
-
+#include "dk_client.hpp"
 // std
 #include <array>
 #include <cassert>
@@ -128,6 +128,11 @@ namespace lve
     // carXD.model->bind(commandBuffer);
     // carXD.model->draw(commandBuffer);
     car.draw(commandBuffer, camera, pipelineLayout);
+    dk::drawPlayers(commandBuffer, camera, pipelineLayout, lveDevice);
+  }
+
+  void SimpleRenderSystem::testRenderObj()
+  {
   }
 
 }

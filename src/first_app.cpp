@@ -35,6 +35,7 @@ namespace lve
       if (frame % 10 == 0 && client.isThreadRunning)
       {
         frame = 0;
+
         client.updatePos(car.carGameObject.transform.translation);
       }
       glm::vec3 cameraPosition = car.carGameObject.transform.translation + cameraOffset;
@@ -80,6 +81,8 @@ namespace lve
     gameObjects.push_back(std::move(sky));
 
     std::shared_ptr<LveModel> carModel = LveModel::createModelFromFile(lveDevice, "models/ghetto_car.obj");
+
+    carcarModel = carModel;
     auto car = LveGameObject::createGameObject();
     car.model = carModel;
     // car.transform.scale = glm::vec3(0.5, 0.5, 0.5);
@@ -88,5 +91,15 @@ namespace lve
 
     gameObjects.push_back(std::move(car));
   }
-
+  // void FirstApp::makeModelForPlayers(std::vector<dk::Player> &players)
+  // {
+  //   // for (int i = 1; i < players.size(); i++)
+  //   // {
+  //   //   auto &player = players[i];
+  //   //   if (player.gameObject == nullptr)
+  //   //   {
+  //   //     player.gameObject = std::make_unique<lve::LveGameObject>(lve::LveGameObject::createGameObject());
+  //   //     player.gameObject->model = carcarModel;
+  //   //   }
+  // }
 }
