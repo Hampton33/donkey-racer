@@ -12,6 +12,8 @@ bool shouldTerminate{false};
 
 dk::DkClient::DkClient()
 {
+    Player localPlayer(231, 2.0f, 4.0f, 7.0f);
+    players.push_back(std::move(localPlayer));
     return;
 }
 
@@ -19,7 +21,6 @@ void dk::DkClient::run()
 {
     std::cout << "[CLIENT] CONSTRUCTER CALLED" << std::endl;
     auto xdd = sizeof(Player);
-    printf("%d", xdd);
     if (tryConnect() == 1)
     {
         std::cout << "[CLIENT] Failed to connect" << std::endl;
@@ -92,13 +93,13 @@ int dk::DkClient::tryConnect()
     }
 
     std::cout << "[CLIENT] CALLING TO START THREEAD" << std::endl;
-    // Start a new thread to handle communication
-    thread = std::thread(communicationLoop, sock);
+    thread = std::thread(communicationLoop, sock, std::ref(isThreadRunning));
     thread.detach();
     return 0;
 }
 
-void dk::communicationLoop(SOCKET sock) // THREAD
+#include <iomanip>
+void dk::communicationLoop(SOCKET sock, bool &isThreadRunning) // THREAD
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(1100));
     std::cout << "[CLIENT] STARTING THREAD" << std::endl;
@@ -115,16 +116,18 @@ void dk::communicationLoop(SOCKET sock) // THREAD
         if (result > 0)
         {
             memcpy(&hashedID, recvBuff, sizeof(hashedID));
-            // printf("[CLIENT] CLIENT HASH ID: %llu\n", hashedID);
+            printf("[CLIENT] CLIENT HASH ID: %llu\n", hashedID);
             getLocalHash = false;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    players[0].id = hashedID;
 
-    Player localPlayer(hashedID, 42.0f, 72.0f, -12.0f);
-    players.push_back(std::move(localPlayer));
+    printf("[CLIENT] LOCAL PLAYER ID: %llu\n", players[0].id);
     while (true)
     {
+        char sendBuff[512];
+        char recvBuff[512];
         if (shouldTerminate)
 
         {
@@ -134,92 +137,98 @@ void dk::communicationLoop(SOCKET sock) // THREAD
 
         C2SMessageType sendType = C2SMessageType::LocalPlayerPosition;
 
-        // WRAPPED IN {} SO IT UNLOCKS INSTANTLY WHEN FINISHED
+        size_t offsetxd = 0;
+
         {
             std::lock_guard<std::mutex> lock(sync);
-            localPlayer.x = players[0].x;
-            localPlayer.y = players[0].y;
-            localPlayer.z = players[0].z;
+            // Assume sendBuff is large enough
+            memcpy(sendBuff + offsetxd, &sendType, sizeof(sendType));
+            offsetxd += sizeof(sendType);
+
+            // Now manually serialize each field of localPlayer
+            memcpy(sendBuff + offsetxd, &players[0].id, sizeof(players[0].id));
+            offsetxd += sizeof(players[0].id);
+
+            memcpy(sendBuff + offsetxd, &players[0].x, sizeof(players[0].x));
+            offsetxd += sizeof(players[0].x);
+
+            memcpy(sendBuff + offsetxd, &players[0].y, sizeof(players[0].y));
+            offsetxd += sizeof(players[0].y);
+
+            memcpy(sendBuff + offsetxd, &players[0].z, sizeof(players[0].z));
         }
 
-        memcpy(sendBuff, &sendType, sizeof(sendType));
-        memcpy(sendBuff + sizeof(sendType), &localPlayer, sizeof(localPlayer));
-        size_t totalSize = sizeof(sendType) + sizeof(localPlayer);
-        result = send(sock, sendBuff, totalSize, 0);
+        offsetxd += sizeof(players[0].z);
 
+        size_t totalSize = offsetxd;
+        result = send(sock, sendBuff, totalSize, 0);
         result = recv(sock, recvBuff, 511, 0);
         if (result > 0)
         {
+
             int offset = 0;
-
-            // no enum matching yet
             int32_t recvType = 0;
-
-            memcpy(&recvType, recvBuff + offset, sizeof(recvType));
-            printf("[CLIENT] RECV TYPE: %d\n", recvType);
-            offset += sizeof(recvType);
-
             int32_t numOfPlayers = 0;
-            memcpy(&numOfPlayers, recvBuff + offset, sizeof(numOfPlayers));
-            printf("[CLIENT] RECV NUM OF PLAYERS: %d\n", numOfPlayers);
-            offset += sizeof(numOfPlayers);
+
+            memcpy(&recvType, recvBuff + 0, 4);
+
+            memcpy(&numOfPlayers, recvBuff + 4, 4);
+
+            printf("3 [CLIENT] NUMBER CONNECTED OF PLAYERS: %d\n", numOfPlayers);
+            offset += 8;
             std::set<uint64_t> receivedPlayerIDs;
             for (int32_t i = 0; i < numOfPlayers && i < 10; i++)
             {
                 uint64_t playerID;
                 float x, y, z;
 
-                memcpy(&playerID, recvBuff + offset, sizeof(playerID));
-                offset += sizeof(playerID);
-                // printf("[CLIENT] RECV PLAYER ID: %llu\n", playerID);
+                memcpy(&playerID, recvBuff + offset, 8);
+                offset += 8;
+                printf("[CLIENT] RECV PLAYER ID: %llu\n", playerID);
+                receivedPlayerIDs.insert(playerID);
+                memcpy(&x, recvBuff + offset, 4);
+                offset += 4;
+                printf("[CLIENT] RECV PLAYER X: %f\n", x);
 
-                memcpy(&x, recvBuff + offset, sizeof(x));
-                offset += sizeof(x);
-                // printf("[CLIENT] RECV PLAYER X: %f\n", x);
+                memcpy(&y, recvBuff + offset, 4);
+                offset += 4;
+                printf("[CLIENT] RECV PLAYER Y: %f\n", y);
 
-                memcpy(&y, recvBuff + offset, sizeof(y));
-                offset += sizeof(y);
-                // printf("[CLIENT] RECV PLAYER Y: %f\n", y);
+                memcpy(&z, recvBuff + offset, 4);
+                offset += 4;
+                printf("[CLIENT] RECV PLAYER Z: %f\n", z);
 
-                memcpy(&z, recvBuff + offset, sizeof(z));
-                offset += sizeof(z);
-                // printf("[CLIENT] RECV PLAYER Z: %f\n", z);
+                printf("\n");
 
                 std::lock_guard<std::mutex> lock(sync);
-                receivedPlayerIDs.insert(playerID);
+
                 auto it = std::find_if(dk::players.begin(), dk::players.end(), [&playerID](const Player &player)
                                        { return player.id == playerID; });
 
-                int haha = 0;
-                for (auto &player : dk::players)
-                {
-                    printf("%d", i++);
-
-                    printf("PLAYER XD: %llu %f %f %f\n", player.id, player.x, player.y, player.z);
-                }
-
-                // printf("dk::players size: %d\n", dk::players.size());
-
                 if (it != dk::players.end())
                 {
-                    it->x = x;
-                    it->y = y;
-                    it->z = z;
-                    it->gameObject->transform.translation = glm::vec3(x, y, z);
+                    if (it->id != hashedID)
+                    {
+                        printf("ok");
+                        it->x = x;
+                        it->y = y;
+                        it->z = z;
+                        // it->gameObject->transform.translation = glm::vec3(x, y, z);
+                    }
                 }
                 else
                 {
                     std::cout << "Player added to the list:" << playerID << std::endl;
                     dk::players.push_back(Player(playerID, x, y, z));
                 }
-                dk::players.erase(std::remove_if(dk::players.begin(), dk::players.end(),
-                                                 [&receivedPlayerIDs](const Player &player)
-                                                 {
-                                                     // Return true if player.id is NOT found in receivedPlayerIDs, marking it for removal
-                                                     return receivedPlayerIDs.find(player.id) == receivedPlayerIDs.end();
-                                                 }),
-                                  dk::players.end());
             }
+            dk::players.erase(std::remove_if(dk::players.begin(), dk::players.end(),
+                                             [&receivedPlayerIDs](const Player &player)
+                                             {
+                                                 return receivedPlayerIDs.find(player.id) == receivedPlayerIDs.end();
+                                             }),
+                              dk::players.end());
+            printf("4 [CLIENT] SIZE OF PLAYERS: %d\n", players.size());
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         else if (result == 0)
@@ -235,17 +244,17 @@ void dk::communicationLoop(SOCKET sock) // THREAD
         std::this_thread::sleep_for(std::chrono::milliseconds(500)); // for now testing
     }
     std::cout << "[CLIENT THREAD] Loop has been broken. Closing connection and thread..." << std::endl;
+    std::lock_guard<std::mutex> lock(sync);
+    isThreadRunning = false;
+    players.clear();
     closesocket(sock);
     WSACleanup();
 }
 
 void dk::DkClient::updatePos(glm::vec3 pos)
 {
+
     std::lock_guard<std::mutex> lock(sync);
-    if (players.size() == 0)
-    {
-        return;
-    }
     // LOCAL PLAYER WILL ALWAYS BE AT INDEX 0, SO THIS IS FINE (ALWAYS(I THINK))
 
     players[0].x = pos.x;
@@ -262,25 +271,31 @@ struct SimplePushConstantData
 namespace dk
 {
 
-    void drawPlayers(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline, lve::LveDevice &device)
+    void drawPlayers(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline, lve::LveDevice &device, lve::LveGameObject &ground)
     {
 
         std::lock_guard<std::mutex> lock(sync);
-        auto modelPtr = players[0].gameObject->model;
-        players[0].gameObject->model->bind(commandBuffer);
-        SimplePushConstantData carPush{};
-        // Skip first index as this is local player, and is drawn in dk_car, perhaps I ought ot merge the two but I rlly cba wanna finish this asap. Can do later
-        for (int i = 1; i++; i < players.size())
+        auto viewProj = camera.getProjection() * camera.getView();
+        if (players.size() == 1)
         {
-            printf("hello");
+            return;
+        }
+        // Skip first index as this is local player, and is drawn in dk_car, perhaps I ought ot merge the two but I rlly cba wanna finish this asap. Can do later
+        for (int i = 1; i < players.size(); i++)
+        {
+
             auto &player = players[i];
-            if (player.gameObject == nullptr)
+            if (player.gameObject->model == nullptr)
             {
-                player.gameObject->model = modelPtr;
+                std::cout << "Setting player model for: " << player.id << std::endl;
+                player.gameObject->model = ground.model;
             }
-            auto viewProj = camera.getProjection() * camera.getView();
+            SimplePushConstantData carPush{};
+            player.gameObject->transform.translation = glm::vec3(player.x, -1.f, player.z);
+            player.gameObject->transform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
             carPush.transform = viewProj * player.gameObject->transform.mat4();
             carPush.color = glm::vec3(1.0f, 0.0f, 0.0f);
+
             vkCmdPushConstants(
                 commandBuffer,
                 pipeline,
@@ -291,5 +306,4 @@ namespace dk
             player.gameObject->model->draw(commandBuffer);
         }
     }
-
 }

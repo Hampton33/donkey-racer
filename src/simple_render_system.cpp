@@ -98,7 +98,7 @@ namespace lve
     ground.transform.translation = car.carGameObject.transform.translation;
     groundPush.color = ground.color;
     groundPush.transform = projectionView * ground.transform.mat4();
-
+    ground.transform.scale = glm::vec3(10.0f, 0.0f, 10.0f);
     vkCmdPushConstants(
         commandBuffer,
         pipelineLayout,
@@ -128,11 +128,32 @@ namespace lve
     // carXD.model->bind(commandBuffer);
     // carXD.model->draw(commandBuffer);
     car.draw(commandBuffer, camera, pipelineLayout);
-    dk::drawPlayers(commandBuffer, camera, pipelineLayout, lveDevice);
+    dk::drawPlayers(commandBuffer, camera, pipelineLayout, lveDevice, car.carGameObject);
+    // testRenderObj(commandBuffer, camera, pipelineLayout, ground);
   }
 
-  void SimpleRenderSystem::testRenderObj()
+  void SimpleRenderSystem::testRenderObj(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline, LveGameObject &ground)
   {
+
+    auto projectionView = camera.getProjection() * camera.getView();
+
+    SimplePushConstantData skyboxPush{};
+
+    ground.transform.translation += glm::vec3(0.0f, -1.0f, 0.01f);
+    ground.transform.scale = glm::vec3(0.1f, 0.1f, 0.1f);
+    skyboxPush.color = glm::vec3(1.0f, 0.0f, 0.0f);
+    skyboxPush.transform = projectionView * ground.transform.mat4();
+    vkCmdPushConstants(
+        commandBuffer,
+        pipelineLayout,
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(SimplePushConstantData),
+        &skyboxPush);
+    ;
+    // skybox.transform.rotation
+    // ground.model->bind(commandBuffer);
+    // ground.model->draw(commandBuffer);
   }
 
 }

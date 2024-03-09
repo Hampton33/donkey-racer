@@ -24,7 +24,7 @@ namespace lve
   void FirstApp::run()
   {
     client.run();
-    glm::vec3 cameraOffset = glm::vec3{3.0f, -3.0f, 3.0f}; // Adjust this offset as needed
+    glm::vec3 cameraOffset = glm::vec3{3.0f, -3.0f, 3.0f};
     SimpleRenderSystem simpleRenderSystem{lveDevice, lveRenderer.getSwapChainRenderPass()};
     LveCamera camera{};
     DkCar car(lveDevice);
@@ -35,14 +35,13 @@ namespace lve
       if (frame % 10 == 0 && client.isThreadRunning)
       {
         frame = 0;
-
+        std::cout << client.isThreadRunning << std::endl;
         client.updatePos(car.carGameObject.transform.translation);
       }
       glm::vec3 cameraPosition = car.carGameObject.transform.translation + cameraOffset;
 
-      glfwPollEvents(); // - glm::vec3{0.0f, -1.0f, 0.0f},
+      glfwPollEvents();
       handle_input(lveWindow.getWindow(), car);
-      // camera.setViewYXZ(glm::vec3{0.0f, -2.0f, 0.0f}, glm::vec3{0.0f, 2.0f, 0.0f});
       camera.setViewTarget(cameraPosition, car.carGameObject.transform.translation, glm::vec3{0.f, -1.f, 0.f});
 
       float aspect = lveRenderer.getAspectRatio();
@@ -66,10 +65,10 @@ namespace lve
 
     std::shared_ptr<LveModel> groundModel = LveModel::createModelFromFile(lveDevice, "models/cube.obj");
     auto ground = LveGameObject::createGameObject();
-    ground.model = groundModel;                                 // Make sure this model is a simple plane or a very flat cube
-    ground.transform.scale = glm::vec3(10.0f, 0.0f, 10.0f);     // Slightly non-zero y scale
-    ground.transform.translation = glm::vec3(0.0f, 0.0f, 0.0f); // Adjust y-axis to position the ground
-    ground.color = glm::vec3(0.0f, 1.0f, 0.0f);                 // Black ground
+    ground.model = groundModel;
+    ground.transform.scale = glm::vec3(10.0f, 0.0f, 10.0f);
+    ground.transform.translation = glm::vec3(0.0f, 0.0f, 0.0f);
+    ground.color = glm::vec3(0.0f, 1.0f, 0.0f);
     gameObjects.push_back(std::move(ground));
 
     std::shared_ptr<LveModel> skyModel = LveModel::createModelFromFile(lveDevice, "models/skybox.obj");
@@ -91,15 +90,5 @@ namespace lve
 
     gameObjects.push_back(std::move(car));
   }
-  // void FirstApp::makeModelForPlayers(std::vector<dk::Player> &players)
-  // {
-  //   // for (int i = 1; i < players.size(); i++)
-  //   // {
-  //   //   auto &player = players[i];
-  //   //   if (player.gameObject == nullptr)
-  //   //   {
-  //   //     player.gameObject = std::make_unique<lve::LveGameObject>(lve::LveGameObject::createGameObject());
-  //   //     player.gameObject->model = carcarModel;
-  //   //   }
-  // }
+
 }

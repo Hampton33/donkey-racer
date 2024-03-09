@@ -31,6 +31,7 @@ namespace lve
     void createPipelineLayout();
     void createPipeline(VkRenderPass renderPass);
 
+    void testRenderObj(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline, LveGameObject &ground);
     LveDevice &lveDevice;
 
     std::unique_ptr<LvePipeline> lvePipeline;

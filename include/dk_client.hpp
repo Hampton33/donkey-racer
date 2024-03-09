@@ -57,7 +57,7 @@ namespace dk
     inline std::mutex sync;             // sync for thread shared access of players
     inline std::vector<Player> players; // local copy of players
 
-    void drawPlayers(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline, lve::LveDevice &device);
+    void drawPlayers(VkCommandBuffer commandBuffer, const lve::LveCamera &camera, VkPipelineLayout pipeline, lve::LveDevice &device, lve::LveGameObject &ground);
 
     class DkClient
     {
@@ -74,6 +74,6 @@ namespace dk
     };
 
     // thread
-    void communicationLoop(SOCKET sock);
+    void communicationLoop(SOCKET sock, bool &isThreadRunning);
 
 }
