@@ -32,7 +32,7 @@ namespace lve
 
   private:
     void loadGameObjects();
-    LveWindow lveWindow{WIDTH, HEIGHT, "Vulkan Tutorial"};
+    LveWindow lveWindow{WIDTH, HEIGHT, "DONKEY RACER"};
     LveDevice lveDevice{lveWindow};
     LveRenderer lveRenderer{lveWindow, lveDevice};
 

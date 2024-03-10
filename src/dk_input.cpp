@@ -6,9 +6,9 @@ void handle_input(GLFWwindow *window, DkCar &car)
 {
 
     static glm::vec3 accel = {0.0f, 0.0f, 0.0f};
-    static float moveSpeed = 3.0f;      // Base acceleration speed
-    static float lookSpeed = 1.5f;      // Turning speed
-    static float maxAccelLength = 5.0f; // Maximum acceleration magnitude
+    static float moveSpeed = 3.0f;
+    static float lookSpeed = 1.5f;
+    static float maxAccelLength = 5.0f;
     struct KeyMappings keys
     {
     };

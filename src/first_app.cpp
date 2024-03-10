@@ -1,7 +1,7 @@
 #include "first_app.hpp"
 #include "lve_model.hpp"
 #include "lve_camera.hpp"
-#include "simple_render_system.hpp"
+#include "dk_render_system.hpp"
 #include "dk_car.hpp"
 // libs
 #define GLM_FORCE_RADIANS
@@ -35,7 +35,6 @@ namespace lve
       if (frame % 10 == 0 && client.isThreadRunning)
       {
         frame = 0;
-        std::cout << client.isThreadRunning << std::endl;
         client.updatePos(car.carGameObject.transform.translation);
       }
       glm::vec3 cameraPosition = car.carGameObject.transform.translation + cameraOffset;
