@@ -39,8 +39,11 @@ namespace dk
         float x;
         float y;
         float z;
+        float rotationX;
+        float rotationY;
+        float rotationZ;
         std::unique_ptr<lve::LveGameObject> gameObject = nullptr;
-        Player(uint64_t id, float x, float y, float z) : id(id), x(x), y(y), z(z)
+        Player(uint64_t id, float x, float y, float z, float rotX, float rotY, float rotZ) : id(id), x(x), y(y), z(z), rotationX(rotX), rotationY(rotY), rotationZ(rotZ)
         {
             // Create a temporary LveGameObject and then move it to the heap for unique_ptr to manage.
             auto tempGameObject = lve::LveGameObject::createGameObject();
@@ -65,7 +68,7 @@ namespace dk
         DkClient();
         ~DkClient(); // Will set shouldTerminate to true
         void run();
-        void updatePos(glm::vec3 pos);
+        void updatePos(glm::vec3 pos, glm::vec3 rotation);
         std::thread thread; // to check if thread is running or not use .joinable()
         bool isThreadRunning;
 

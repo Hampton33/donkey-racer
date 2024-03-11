@@ -35,7 +35,7 @@ namespace lve
       if (frame % 10 == 0 && client.isThreadRunning)
       {
         frame = 0;
-        client.updatePos(car.carGameObject.transform.translation);
+        client.updatePos(car.carGameObject.transform.translation, car.carGameObject.transform.rotation);
       }
       glm::vec3 cameraPosition = car.carGameObject.transform.translation + cameraOffset;
 

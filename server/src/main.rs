@@ -11,6 +11,9 @@ struct Player {
     x: f32,
     y: f32,
     z: f32,
+    rotation_x: f32,
+    rotation_y: f32,
+    rotation_z: f32,
 }
 
 struct UpdateClient {
@@ -46,6 +49,9 @@ fn handle_client(mut stream: TcpStream, clients: Arc<Mutex<Vec<Player>>>) -> io:
         x: 0.0,
         y: 0.0,
         z: 0.0,
+        rotation_x: 0.0,
+        rotation_y: 0.0,
+        rotation_z: 0.0,
     };
     {
         clients.lock().unwrap().push(client);
@@ -82,7 +88,18 @@ fn handle_client(mut stream: TcpStream, clients: Arc<Mutex<Vec<Player>>>) -> io:
         let x = f32::from_le_bytes(pos_x);
         let y = f32::from_le_bytes(pos_y);
         let z = f32::from_le_bytes(pos_z);
-        println!("Received: {:?} {:?} {:?} {:?} {:?}", recv_type, id, x, y, z);
+
+        let rot_x: [u8; 4] = buffer[24..28].try_into().expect("slice with incorrect length");
+        let rot_y: [u8; 4] = buffer[28..32].try_into().expect("slice with incorrect length");
+        let rot_z: [u8; 4] = buffer[32..36].try_into().expect("slice with incorrect length");
+
+        let rotation_x = f32::from_le_bytes(rot_x);
+        let rotation_y = f32::from_le_bytes(rot_y);
+        let rotation_z = f32::from_le_bytes(rot_z);
+        println!(
+            "Received: RECEVE TYPE: {:?}\n PLAYER ID;{:?} POSITION: {:?} {:?} {:?}\n ROTATION: {:?} {:?} {:?}\n",
+            recv_type, id, x, y, z, rotation_x, rotation_y, rotation_z
+        );
         {
             let mut clients_lock = clients.lock().unwrap();
             println!("clients size: {}", clients_lock.len());
@@ -96,6 +113,10 @@ fn handle_client(mut stream: TcpStream, clients: Arc<Mutex<Vec<Player>>>) -> io:
             client.x = x;
             client.y = y;
             client.z = z;
+
+            client.rotation_x = rotation_x;
+            client.rotation_y = rotation_y;
+            client.rotation_z = rotation_z;
         }
 
         let buffer_offset = construct_client_update(&mut buffer, clients.clone());
@@ -172,6 +193,15 @@ fn construct_client_update(buffer: &mut [u8], clients: Arc<Mutex<Vec<Player>>>) 
         offset += 4;
 
         buffer[offset..(offset + 4)].copy_from_slice(&player.z.to_le_bytes());
+        offset += 4;
+
+        buffer[offset..(offset + 4)].copy_from_slice(&player.rotation_x.to_le_bytes());
+        offset += 4;
+
+        buffer[offset..(offset + 4)].copy_from_slice(&player.rotation_y.to_le_bytes());
+        offset += 4;
+
+        buffer[offset..(offset + 4)].copy_from_slice(&player.rotation_z.to_le_bytes());
         offset += 4;
     }
 

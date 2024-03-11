@@ -3,16 +3,11 @@
 #include "dk_client.hpp"
 #include "dk_car.hpp"
 
-// Server will send list current of players on initial contact
-
-// Client sends local player transform to server, as soon as recived by server, it will send that to all other clients. Server will also send notifcations on
-// Player connect and player disconnect
-
 bool shouldTerminate{false};
 
 dk::DkClient::DkClient()
 {
-    Player localPlayer(231, 2.0f, 4.0f, 7.0f);
+    Player localPlayer(231, 2.0f, 4.0f, 7.0f, 0.0f, 0.0f, 0.0f);
     players.push_back(std::move(localPlayer));
     return;
 }
@@ -141,11 +136,10 @@ void dk::communicationLoop(SOCKET sock, bool &isThreadRunning) // THREAD
 
         {
             std::lock_guard<std::mutex> lock(sync);
-            // Assume sendBuff is large enough
+
             memcpy(sendBuff + offsetxd, &sendType, sizeof(sendType));
             offsetxd += sizeof(sendType);
 
-            // Now manually serialize each field of localPlayer
             memcpy(sendBuff + offsetxd, &players[0].id, sizeof(players[0].id));
             offsetxd += sizeof(players[0].id);
 
@@ -156,9 +150,17 @@ void dk::communicationLoop(SOCKET sock, bool &isThreadRunning) // THREAD
             offsetxd += sizeof(players[0].y);
 
             memcpy(sendBuff + offsetxd, &players[0].z, sizeof(players[0].z));
-        }
+            offsetxd += sizeof(players[0].z);
 
-        offsetxd += sizeof(players[0].z);
+            memcpy(sendBuff + offsetxd, &players[0].rotationX, sizeof(players[0].rotationX));
+            offsetxd += sizeof(players[0].rotationX);
+
+            memcpy(sendBuff + offsetxd, &players[0].rotationY, sizeof(players[0].rotationY));
+            offsetxd += sizeof(players[0].rotationY);
+
+            memcpy(sendBuff + offsetxd, &players[0].rotationZ, sizeof(players[0].rotationZ));
+            offsetxd += sizeof(players[0].rotationZ);
+        }
 
         size_t totalSize = offsetxd;
         result = send(sock, sendBuff, totalSize, 0);
@@ -181,7 +183,7 @@ void dk::communicationLoop(SOCKET sock, bool &isThreadRunning) // THREAD
             {
                 uint64_t playerID;
                 float x, y, z;
-
+                float rotationX, rotationY, rotationZ;
                 memcpy(&playerID, recvBuff + offset, 8);
                 offset += 8;
                 printf("[CLIENT] RECV PLAYER ID: %llu\n", playerID);
@@ -198,6 +200,17 @@ void dk::communicationLoop(SOCKET sock, bool &isThreadRunning) // THREAD
                 offset += 4;
                 printf("[CLIENT] RECV PLAYER Z: %f\n", z);
 
+                memcpy(&rotationX, recvBuff + offset, 4);
+                offset += 4;
+                printf("[CLIENT] RECV PLAYER ROTATION X: %f\n", z);
+
+                memcpy(&rotationY, recvBuff + offset, 4);
+                offset += 4;
+                printf("[CLIENT] RECV PLAYER ROTATION Y: %f\n", z);
+
+                memcpy(&rotationZ, recvBuff + offset, 4);
+                offset += 4;
+
                 printf("\n");
 
                 std::lock_guard<std::mutex> lock(sync);
@@ -213,13 +226,16 @@ void dk::communicationLoop(SOCKET sock, bool &isThreadRunning) // THREAD
                         it->x = x;
                         it->y = y;
                         it->z = z;
+                        it->rotationX = rotationX;
+                        it->rotationY = rotationY;
+                        it->rotationZ = rotationZ;
                         // it->gameObject->transform.translation = glm::vec3(x, y, z);
                     }
                 }
                 else
                 {
                     std::cout << "Player added to the list:" << playerID << std::endl;
-                    dk::players.push_back(Player(playerID, x, y, z));
+                    dk::players.push_back(Player(playerID, x, y, z, rotationX, rotationY, rotationZ));
                 }
             }
             dk::players.erase(std::remove_if(dk::players.begin(), dk::players.end(),
@@ -251,7 +267,7 @@ void dk::communicationLoop(SOCKET sock, bool &isThreadRunning) // THREAD
     WSACleanup();
 }
 
-void dk::DkClient::updatePos(glm::vec3 pos)
+void dk::DkClient::updatePos(glm::vec3 pos, glm::vec3 rotation)
 {
 
     std::lock_guard<std::mutex> lock(sync);
@@ -260,6 +276,10 @@ void dk::DkClient::updatePos(glm::vec3 pos)
     players[0].x = pos.x;
     players[0].y = pos.y;
     players[0].z = pos.z;
+
+    players[0].rotationX = rotation.x;
+    players[0].rotationY = rotation.y;
+    players[0].rotationZ = rotation.z;
 }
 
 struct SimplePushConstantData
@@ -292,6 +312,7 @@ namespace dk
             }
             SimplePushConstantData carPush{};
             player.gameObject->transform.translation = glm::vec3(player.x, -1.f, player.z);
+            player.gameObject->transform.rotation = glm::vec3(player.rotationX, player.rotationY, player.rotationZ);
             player.gameObject->transform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
             carPush.transform = viewProj * player.gameObject->transform.mat4();
             carPush.color = glm::vec3(1.0f, 0.0f, 0.0f);
