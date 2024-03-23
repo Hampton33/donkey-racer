@@ -69,7 +69,7 @@ int dk::DkClient::tryConnect()
     server.sin_family = AF_INET;
     server.sin_port = htons(6969);
 
-    result = inet_pton(AF_INET, "192.168.38.164", &server.sin_addr);
+    result = inet_pton(AF_INET, "haha...", &server.sin_addr);
     if (result <= 0)
     {
         std::cerr << "Invalid address/Address not supported" << std::endl;
