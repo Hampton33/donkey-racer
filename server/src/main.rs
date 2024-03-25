@@ -1,13 +1,11 @@
 use std::io::{self, Read, Write};
-use std::mem::size_of;
 use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::os::raw::c_char;
 use std::sync::{Arc, Mutex};
 use std::thread;
 #[derive(Debug, PartialEq)]
 
 struct Player {
-    id: u64, // int 64 on client I know
+    id: u64,
     x: f32,
     y: f32,
     z: f32,
@@ -16,27 +14,7 @@ struct Player {
     rotation_z: f32,
 }
 
-struct UpdateClient {
-    total_players: i32,
-    players: [Player],
-}
-
-/*
-
-Index 0 - Type Enum:
-0 = Introduce new client
-    i32 ID
-
-1 = Remove client
-    i32 ID
-
-2 = Client transformation
-    i32 ID
-    f32 x
-    f32 y
-    f32 z
-
-*/
+const IP_ADDRESS: &str = "0.0:8080"; // ip:port
 
 #[allow(unreachable_code)]
 fn handle_client(mut stream: TcpStream, clients: Arc<Mutex<Vec<Player>>>) -> io::Result<()> {
@@ -58,40 +36,51 @@ fn handle_client(mut stream: TcpStream, clients: Arc<Mutex<Vec<Player>>>) -> io:
         println!("Client ID: {}", clients.lock().unwrap().len());
     }
 
-    let mut buffer = [0u8; 1024]; // or any appropriate size, ensuring it's at least 8 bytes
-    let offset = 0; // Starting at the beginning of the buffer
-    buffer[offset..(offset + 8)].copy_from_slice(&client_player_id.to_le_bytes()); // Copying the hashedID
-    stream.write_all(&buffer[..8])?; // Sending the first 8 bytes
+    let mut buffer = [0u8; 1024];
+    let offset = 0;
+    buffer[offset..(offset + 8)].copy_from_slice(&client_player_id.to_le_bytes());
+    stream.write_all(&buffer[..8])?;
 
     loop {
-        //buffer.fill(0);
-
-        println!("Connection ");
-        let nbytes = match stream.read(&mut buffer) {
+        let _nbytes = match stream.read(&mut buffer) {
             Ok(n) => n,
             Err(_) => {
                 println!("Connection closed XD");
                 break;
             }
         };
-        let recv_type: [u8; 4] = buffer[0..4].try_into().expect("slice with incorrect length");
-        //let player_offset = 4;
-        let player_id: [u8; 8] = buffer[4..12].try_into().expect("slice with incorrect length");
-        let id = u64::from_le_bytes(player_id); // Now correctly interpreting as u64
+        let recv_type: [u8; 4] = buffer[0..4]
+            .try_into()
+            .expect("slice with incorrect length");
 
-        // Then, parse each float value for the player's position
-        let pos_x: [u8; 4] = buffer[12..16].try_into().expect("slice with incorrect length");
-        let pos_y: [u8; 4] = buffer[16..20].try_into().expect("slice with incorrect length");
-        let pos_z: [u8; 4] = buffer[20..24].try_into().expect("slice with incorrect length");
+        let player_id: [u8; 8] = buffer[4..12]
+            .try_into()
+            .expect("slice with incorrect length");
+        let id = u64::from_le_bytes(player_id);
 
-        // Convert bytes to their respective values
+        let pos_x: [u8; 4] = buffer[12..16]
+            .try_into()
+            .expect("slice with incorrect length");
+        let pos_y: [u8; 4] = buffer[16..20]
+            .try_into()
+            .expect("slice with incorrect length");
+        let pos_z: [u8; 4] = buffer[20..24]
+            .try_into()
+            .expect("slice with incorrect length");
+
         let x = f32::from_le_bytes(pos_x);
         let y = f32::from_le_bytes(pos_y);
         let z = f32::from_le_bytes(pos_z);
 
-        let rot_x: [u8; 4] = buffer[24..28].try_into().expect("slice with incorrect length");
-        let rot_y: [u8; 4] = buffer[28..32].try_into().expect("slice with incorrect length");
-        let rot_z: [u8; 4] = buffer[32..36].try_into().expect("slice with incorrect length");
+        let rot_x: [u8; 4] = buffer[24..28]
+            .try_into()
+            .expect("slice with incorrect length");
+        let rot_y: [u8; 4] = buffer[28..32]
+            .try_into()
+            .expect("slice with incorrect length");
+        let rot_z: [u8; 4] = buffer[32..36]
+            .try_into()
+            .expect("slice with incorrect length");
 
         let rotation_x = f32::from_le_bytes(rot_x);
         let rotation_y = f32::from_le_bytes(rot_y);
@@ -103,7 +92,10 @@ fn handle_client(mut stream: TcpStream, clients: Arc<Mutex<Vec<Player>>>) -> io:
         {
             let mut clients_lock = clients.lock().unwrap();
             println!("clients size: {}", clients_lock.len());
-            let client = match clients_lock.iter_mut().find(|player| player.id == client_player_id) {
+            let client = match clients_lock
+                .iter_mut()
+                .find(|player| player.id == client_player_id)
+            {
                 Some(client) => client,
                 None => {
                     break;
@@ -120,10 +112,7 @@ fn handle_client(mut stream: TcpStream, clients: Arc<Mutex<Vec<Player>>>) -> io:
         }
 
         let buffer_offset = construct_client_update(&mut buffer, clients.clone());
-        ///println!("Sent update to client: {}", buffer_offset);
-        //println!("Buffer bytes: {:?}", buffer);
         stream.write_all(&buffer[..buffer_offset])?;
-        //println!("LOOP DONE ");
     }
     let mut clients_lock = clients.lock().unwrap();
     clients_lock.retain(|player| player.id != client_player_id);
@@ -135,28 +124,21 @@ fn handle_client(mut stream: TcpStream, clients: Arc<Mutex<Vec<Player>>>) -> io:
 }
 
 fn main() -> io::Result<()> {
-    // let mut ip_buffer = String::new();
-    // let mut port_buffer = String::new();
-
-    // println!("Enter machine IP address:");
-    // std::io::stdin().read_line(&mut ip_buffer).unwrap();
-    // println!("Enter machine IP address port:");
-    // std::io::stdin().read_line(&mut port_buffer).unwrap();
-    // println!("Connecting to {} on port {}", ip_buffer, port_buffer);
-    // return Ok(());
-
-    let listener = TcpListener::bind("192.168.38.164:6969")?;
-    println!("Server listening on port 6969");
+    let listener = TcpListener::bind(IP_ADDRESS)?;
+    println!("Listener on ip: {}", IP_ADDRESS);
 
     let clients: Arc<Mutex<Vec<Player>>> = Arc::new(Mutex::new(Vec::new()));
 
     for stream in listener.incoming() {
         let clients_clone = clients.clone();
-        println!("Active connections: {}", clients_clone.lock().unwrap().len());
+        println!(
+            "Active connections: {}",
+            clients_clone.lock().unwrap().len()
+        );
         match stream {
             Ok(stream) => {
                 thread::spawn(move || {
-                    handle_client(stream, clients_clone);
+                    let _ = handle_client(stream, clients_clone);
                 });
             }
             Err(e) => eprintln!("Failed to accept connection: {}", e),
@@ -175,9 +157,7 @@ fn construct_client_update(buffer: &mut [u8], clients: Arc<Mutex<Vec<Player>>>) 
     buffer[offset..(offset + 4)].copy_from_slice(&type_enum.to_le_bytes());
     offset += 4;
 
-    //println!("{}", clients_lock.len());
     let number_of_players: i32 = clients_lock.len() as i32;
-    //println!("Number of players: {}", number_of_players);
     buffer[offset..(offset + 4)].copy_from_slice(&number_of_players.to_le_bytes());
     offset += 4;
 
@@ -205,9 +185,7 @@ fn construct_client_update(buffer: &mut [u8], clients: Arc<Mutex<Vec<Player>>>) 
         offset += 4;
     }
 
-    println!("BUffer size: {:?}", buffer.len());
-    println!("Offset: {:?}", offset);
-    offset // Return the total size of the constructed message
+    offset
 }
 
 fn hash_ip_address(ip_address: &SocketAddr) -> u64 {
