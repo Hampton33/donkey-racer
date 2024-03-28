@@ -12,17 +12,17 @@
 
 namespace lve
 {
-  class FirstApp
+  class DkApp
   {
   public:
     static constexpr int WIDTH = 800;
     static constexpr int HEIGHT = 600;
 
-    FirstApp();
-    ~FirstApp();
+    DkApp();
+    ~DkApp();
 
-    FirstApp(const FirstApp &) = delete;
-    FirstApp &operator=(const FirstApp &) = delete;
+    DkApp(const DkApp &) = delete;
+    DkApp &operator=(const DkApp &) = delete;
 
     dk::DkClient client;
     bool isThreadRunning() { return client.isThreadRunning; };

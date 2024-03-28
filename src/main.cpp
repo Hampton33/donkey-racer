@@ -1,5 +1,5 @@
 
-#include "first_app.hpp"
+#include "dk_app.hpp"
 // std
 #include <cstdlib>
 #include <iostream>
@@ -9,7 +9,7 @@ int main()
 {
   std::cout << "Connecting to server..." << std::endl;
 
-  lve::FirstApp app{};
+  lve::DkApp app{};
   try
   {
 

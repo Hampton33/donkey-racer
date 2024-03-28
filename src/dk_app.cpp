@@ -1,4 +1,4 @@
-#include "first_app.hpp"
+#include "dk_app.hpp"
 #include "lve_model.hpp"
 #include "lve_camera.hpp"
 #include "dk_render_system.hpp"
@@ -17,11 +17,11 @@
 namespace lve
 {
 
-  FirstApp::FirstApp() { loadGameObjects(); }
+  DkApp::DkApp() { loadGameObjects(); }
 
-  FirstApp::~FirstApp() {}
+  DkApp::~DkApp() {}
 
-  void FirstApp::run()
+  void DkApp::run()
   {
     client.run();
     glm::vec3 cameraOffset = glm::vec3{3.0f, -3.0f, 3.0f};
@@ -59,7 +59,7 @@ namespace lve
     vkDeviceWaitIdle(lveDevice.device());
   }
 
-  void FirstApp::loadGameObjects()
+  void DkApp::loadGameObjects()
   {
 
     std::shared_ptr<LveModel> groundModel = LveModel::createModelFromFile(lveDevice, "models/cube.obj");
