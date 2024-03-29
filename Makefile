@@ -24,13 +24,23 @@ else
     RMDIR = rm -rf build
     TARGET := $(TARGET)
     CXXFLAGS += -I./external/tinyobjloader -g -O2 $(shell find ./include -type d | sed 's/^/-I/')
-    LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
+    LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 
 endif
 
 OBJECTS=$(SOURCES:src/%.cpp=build/%.o)
 
 # Default target
 all: $(TARGET)
+
+# Target to generate compile_commands.json
+compile_commands.json: $(SOURCES)
+	@echo "[" > compile_commands.json
+	@$(foreach src, $^, \
+		echo "{ \"directory\": \"`pwd`\", \"command\": \"$(CXX) $(CXXFLAGS) -c -o $(src:src/%.cpp=build/%.o) $(src)\", \"file\": \"$(src)\" }," >> compile_commands.json;)
+	@echo "]" >> compile_commands.json
+
+.PHONY: compile_commands.json
+
 
 # Rule to link the program
 $(TARGET): $(OBJECTS)

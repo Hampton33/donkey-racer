@@ -1,0 +1,9 @@
+[
+  {
+    "directory": "/path/to/your/project",
+    "command": "g++ -I./include/ -I./external/tinyobjloader -g -O2 $(find ./include -type d | sed 's/^/-I/') main.cpp -o main",
+    "file": "/path/to/your/project/main.cpp"
+  }
+  // Add more entries for other source files as needed
+]
+
